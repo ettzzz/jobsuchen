@@ -6,10 +6,6 @@ Created on Mon May  6 10:22:02 2019
 @author: eriti
 """
 
-'''
-Based on SQLite
-(UID,Source:Position,Release,Company,Location,Payment,URL,Keyword)
-'''
 
 import sqlite3
 

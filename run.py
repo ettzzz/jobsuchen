@@ -7,23 +7,12 @@ Created on Mon May  6 09:38:46 2019
 """
 
 
-'''
-job suchen run.py
-Struktur:
-    DataBase
-    Notifikation über den Bot
-    Spider über den Websites
-    Filtrieren
-    
-(UID,Source:Position,Release,Company,Location,Payment,URL,Keyword)
-'''
-
 import time
 import random
 from job_db import jobDB
 from bot import tell_my_bot
 from spider import jobSpider
-
+from lokale.var import token, chat_id
 
 def main():
     crawls_per_day = 3
@@ -33,7 +22,7 @@ def main():
         '数据分析': {'stop':['弹性','大专'], 'go':['应届','海外','硕士']},
         }
     
-    messager = tell_my_bot()
+    messager = tell_my_bot(token, chat_id)
     agent = jobSpider(job_cfgs)
     db = jobDB()
     
@@ -43,9 +32,8 @@ def main():
             for each_keyword in list(job_cfgs.keys()):
                 each_job_list = agent.scheduler(each_keyword, fast=True)
                 db.insert(each_job_list)
-        
             counter += 1
-            time.sleep(3600*24/crawls_per_day + random.randint(-5000, 5000))
+            time.sleep(86400/crawls_per_day + random.randint(-5000, 5000))
         
         messager.send_to_me(db.fetch())
         if db.pool_check():

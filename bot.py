@@ -6,14 +6,9 @@ Created on Mon May  6 10:22:33 2019
 @author: eriti
 """
 
-'''
-Notify the shit every day
-Name,Company,payment, html:url
-UID,Category,Position,Release,Company,Location,Payment,URL
-'''
 
 import requests
-from local_var import token, chat_id
+
 
 class tell_my_bot():
 
