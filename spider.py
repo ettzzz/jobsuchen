@@ -7,27 +7,6 @@ Created on Mon May  6 10:22:19 2019
 """
 
 
-'''
-Crawl the shit every 12 hours
-EN:
-    Linkedin
-    Indeed
-CN:
-    猎聘网
-    智联招聘
-    拉勾网
-    
-keyword-page1only-description filtered
-1. description filter
-2. unique id filter
-3. get valueable infos
-4. insert infos into database
-
-(UID,Source:Position,Release,Company,Location,Payment,URL,Keyword)
-还需要啥呢：
-    一个uid的table 特征要搞出来 所以一个pool是必要的咯 1000吧 多了也看不过来
-'''
-
 import time
 import random
 import requests
@@ -320,10 +299,9 @@ class jobSpider():
         go_words = self.cfgs[each_job['Keyword']]['go']
         headers = {'User-Agent':random.choice(self.user_agents)}
         
-        r = requests.get(each_job['URL'], headers = headers, timeout = 10)
-        html = BeautifulSoup(r.text, 'html.parser')
-        
         try:
+            r = requests.get(each_job['URL'], headers = headers, timeout = 3)
+            html = BeautifulSoup(r.text, 'html.parser')
             if each_job['Source'] == 'linkedin':
                 d = html.select('section.description')[0]
             elif each_job['Source'] == 'indeed':
@@ -359,13 +337,14 @@ class jobSpider():
         for each_job in self.job_list:
             if self.filtering(each_job):
                 filtered_job_list.append(each_job)
+        print('filtered length:{}'.format(len(filtered_job_list)))
                 
         if fast == False:
             for each_job in filtered_job_list:
                 time.sleep(random.randint(3,6))
                 if self.censoring(each_job):
                     true_job_list.append(each_job)
-            
+            print('censored length:{}'.format(len(true_job_list)))
             return true_job_list
         
         else:

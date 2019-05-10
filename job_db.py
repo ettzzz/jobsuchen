@@ -56,7 +56,6 @@ class jobDB():
     def clean(self):
         self.c.execute("DELETE FROM {};".format(self.job_table))
         self.conn.commit()
-#        self.conn.close()
         
     def reset(self):
         self.c.execute("DROP TABLE {};".format(self.job_table))
@@ -65,7 +64,7 @@ class jobDB():
         
     def pool_level(self):
         self.c.execute("SELECT count(*) FROM {};".format(self.pool_table))
-        return self.c.fetchall()[0]
+        return self.c.fetchall()[0][0]
 
     def pool_check(self):
         return True if self.pool_level() > 6000 else False

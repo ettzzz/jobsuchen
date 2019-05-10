@@ -40,7 +40,7 @@ class tell_my_bot():
         else:
             bot_params = {
                         'chat_id': self.chat_id,
-                        'text': 'Just too many messages, I will just skip them this time.',
+                        'text': 'Just too many messages({}), I will just skip them this time.'.format(len(all_jobs)),
                         }
             requests.get(self.api_base, headers=self.header, params=bot_params)
             

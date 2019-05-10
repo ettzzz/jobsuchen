@@ -15,7 +15,7 @@ from spider import jobSpider
 from lokale.var import token, chat_id
 
 def main():
-    crawls_per_day = 3
+    crawls_per_day = 3 # frequency of the crawling
     job_cfgs = {
         'python': {'stop':['弹性','大专' ], 'go':['应届','海外','硕士','quirement']},
         '智能交通': {'stop':['弹性'], 'go':['应届','海外','硕士']},
@@ -28,10 +28,12 @@ def main():
     
     while True:
         counter = 0
-        while counter < crawls_per_day: # frequency of the crawling
+        while counter < crawls_per_day: 
             for each_keyword in list(job_cfgs.keys()):
-                each_job_list = agent.scheduler(each_keyword, fast=True)
+                print('started {} {}'.format(each_keyword, counter))
+                each_job_list = agent.scheduler(each_keyword)
                 db.insert(each_job_list)
+               
             counter += 1
             time.sleep(86400/crawls_per_day + random.randint(-5000, 5000))
         
