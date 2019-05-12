@@ -38,14 +38,23 @@ class jobDB():
 
     def insert(self, true_job_list):
         for each_job in true_job_list:
-            self.c.execute("SELECT count(*) FROM {} WHERE UID == '{}';".format(self.pool_table, each_job['UID']))
-            if self.c.fetchone()[0] == 0:
+            try:
                 self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
+                value = "({},{},{},{},{},{},{},{})".format(
+                        each_job['UID'],
+                        each_job['Source'],
+                        each_job['Position'],
+                        each_job['Release'],
+                        each_job['Company'],
+                        each_job['Location'],
+                        each_job['Payment'],
+                        each_job['URL'],
+                        each_job['Keyword'])
                 self.c.execute(
                     "INSERT INTO {} (UID,Source,Position,Release,Company,Location,Payment,URL,Keyword) \
-                     VALUES {};".format(self.job_table, tuple(each_job.values()))
+                     VALUES {};".format(self.job_table, value)
                     )
-            else:
+            except:
                 pass
         self.conn.commit()
     

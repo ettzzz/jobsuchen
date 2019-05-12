@@ -75,7 +75,6 @@ class jobSpider():
             except:
 #                print('request error with status_code {} at {}.'.format(r.status_code, r.url))
                 continue
-            time.sleep(random.randint(3,6))
 
     
     def indeed(self, keyword): 
@@ -124,7 +123,6 @@ class jobSpider():
             except:
 #                print('request error with status_code {} at {}.'.format(r.status_code, r.url))
                 continue
-            time.sleep(random.randint(3,6))
     
     def liepin(self, keyword): 
         base_url = 'https://www.liepin.com/zhaopin/'
@@ -172,7 +170,6 @@ class jobSpider():
             except:
 #                print('request error with status_code {} at {}.'.format(r.status_code, r.url))
                 continue
-            time.sleep(random.randint(3,6))
 
     
     def zhilian(self, keyword): 
@@ -230,7 +227,6 @@ class jobSpider():
             except:
 #                print('request error with status_code {} at {}.'.format(r.status_code, r.url))
                 continue
-            time.sleep(random.randint(3,6))
     
     
     
@@ -273,7 +269,6 @@ class jobSpider():
             except:
 #                print('request error with status_code {} at {}.'.format(r.status_code, r.url))
                 continue   
-            time.sleep(random.randint(3,6))
     
     
     def filtering(self, each_job):
@@ -327,6 +322,7 @@ class jobSpider():
     def scheduler(self, keyword, fast = True):
         filtered_job_list = []
         true_job_list = []
+        self.job_list = []
         
         self.linkedin(keyword)
         self.indeed(keyword)
@@ -337,13 +333,17 @@ class jobSpider():
         for each_job in self.job_list:
             if self.filtering(each_job):
                 filtered_job_list.append(each_job)
+            else:
+                pass
         print('filtered length:{}'.format(len(filtered_job_list)))
                 
         if fast == False:
             for each_job in filtered_job_list:
-                time.sleep(random.randint(3,6))
+#                time.sleep(random.randint(3,6))
                 if self.censoring(each_job):
                     true_job_list.append(each_job)
+                else:
+                    pass
             print('censored length:{}'.format(len(true_job_list)))
             return true_job_list
         
@@ -355,4 +355,6 @@ class jobSpider():
 #q = dict(parse_qsl(o.query)) # or parse_qs(o.query)
 #r.encoding('gbk')
 #response = requests.request("GET", url, headers=headers, params=querystring)
+
+        
 
