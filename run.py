@@ -30,7 +30,7 @@ def main():
         counter = 0
         while counter < crawls_per_day: 
             for each_keyword in list(job_cfgs.keys()):
-                print('started {} {}'.format(each_keyword, counter))
+#                print('started {} {}'.format(each_keyword, counter))
                 each_job_list = agent.scheduler(each_keyword)
                 db.insert(each_job_list)
                
@@ -44,3 +44,5 @@ def main():
             
 if __name__ == '__main__':
     main()
+    
+    
