@@ -38,6 +38,7 @@ def main():
             time.sleep(86400/crawls_per_day + random.randint(-5000, 5000))
         
         messager.send_to_me(db.fetch())
+        db.clean()
         if db.pool_check():
             messager.pool_reminder(db.pool_level())
 
