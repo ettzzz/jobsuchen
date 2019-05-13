@@ -28,7 +28,7 @@ class tell_my_bot():
         return text
 
     def send_to_me(self, all_jobs):
-        if len(all_jobs) < 50:
+        if len(all_jobs) < 100:
             for each_job in all_jobs:
                 bot_params = {
                         'chat_id': self.chat_id,
