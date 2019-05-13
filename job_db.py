@@ -39,7 +39,7 @@ class jobDB():
     def insert(self, true_job_list):
         for each_job in true_job_list:
             try:
-                self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
+                self.c.execute("INSERT INTO {} (URL) VALUES ('{}');".format(self.pool_table, each_job['URL']))
                 value = "('{}','{}','{}','{}','{}','{}','{}','{}','{}')".format(
                         each_job['UID'],
                         each_job['Source'],
