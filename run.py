@@ -36,7 +36,6 @@ def main():
             counter += 1
             time.sleep(86400/crawls_per_day + random.randint(-5000, 5000))
         
-        print('protocal established')
         messager.send_to_me(db.fetch())
         db.clean()
         if db.pool_check():
