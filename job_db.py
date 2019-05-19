@@ -37,6 +37,7 @@ class jobDB():
             self.clean()
 
     def insert(self, true_job_list):
+        counter = 0
         for each_job in true_job_list:
             try:
                 self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
@@ -54,9 +55,11 @@ class jobDB():
                     "INSERT INTO {} (UID,Source,Position,Release,Company,Location,Payment,URL,Keyword) \
                      VALUES {};".format(self.job_table, value)
                     )
+                counter += 1
             except:
                 pass
         self.conn.commit()
+        print(counter)
     
     def fetch(self):
         self.c.execute('SELECT * FROM {};'.format(self.job_table))

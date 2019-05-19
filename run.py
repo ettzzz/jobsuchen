@@ -30,13 +30,13 @@ def main():
         counter = 0
         while counter < crawls_per_day: 
             for each_keyword in list(job_cfgs.keys()):
-#                print('started {} {}'.format(each_keyword, counter))
                 each_job_list = agent.scheduler(each_keyword)
                 db.insert(each_job_list)
                
             counter += 1
             time.sleep(86400/crawls_per_day + random.randint(-5000, 5000))
         
+        print('protocal established')
         messager.send_to_me(db.fetch())
         db.clean()
         if db.pool_check():
@@ -45,5 +45,4 @@ def main():
             
 if __name__ == '__main__':
     main()
-    
-    
+

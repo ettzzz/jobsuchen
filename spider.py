@@ -44,7 +44,7 @@ class jobSpider():
         base_url = 'https://cn.linkedin.com/jobs/search/'
         pages = self.crawl_size // 25 # 25 jobs/page 
         headers = {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'}
-        release = time.strftime('%m-%d',time.localtime(time.time()))
+        release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
         
         for each_page in range(pages):
             params = {
@@ -81,7 +81,7 @@ class jobSpider():
         base_url = 'https://cn.indeed.com/%E5%B7%A5%E4%BD%9C'
         pages = self.crawl_size // 50
         headers = {'User-Agent':random.choice(self.user_agents)}
-        release = time.strftime('%m-%d',time.localtime(time.time()))
+        release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
         
         for each_page in range(pages):
             params = {
@@ -328,14 +328,13 @@ class jobSpider():
         self.indeed(keyword)
         self.liepin(keyword)
         self.zhilian(keyword)
-        self.lagou(keyword)
+#        self.lagou(keyword)
         
         for each_job in self.job_list:
             if self.filtering(each_job):
                 filtered_job_list.append(each_job)
             else:
                 pass
-        print('filtered length:{}'.format(len(filtered_job_list)))
                 
         if fast == False:
             for each_job in filtered_job_list:
@@ -355,6 +354,5 @@ class jobSpider():
 #q = dict(parse_qsl(o.query)) # or parse_qs(o.query)
 #r.encoding('gbk')
 #response = requests.request("GET", url, headers=headers, params=querystring)
-
-        
-
+            
+ 

@@ -8,7 +8,7 @@ Created on Mon May  6 10:22:33 2019
 
 
 import requests
-
+import time
 
 class tell_my_bot():
 
@@ -37,6 +37,7 @@ class tell_my_bot():
                         'parse_mode': 'HTML',
                         }
                 requests.get(self.api_base, headers=self.header, params=bot_params)
+                time.sleep(0.5)
         else:
             bot_params = {
                         'chat_id': self.chat_id,
