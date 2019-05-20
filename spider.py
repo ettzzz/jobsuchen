@@ -314,8 +314,8 @@ class jobSpider():
         
         if any(each_sw in d for each_sw in stop_words):
             censor_key = False
-        if any(each_gw in d for each_gw in go_words):
-            censor_key = True
+#        if any(each_gw in d for each_gw in go_words):
+#            censor_key = True
         
         return censor_key
     
@@ -328,7 +328,7 @@ class jobSpider():
         self.indeed(keyword)
         self.liepin(keyword)
         self.zhilian(keyword)
-#        self.lagou(keyword)
+        self.lagou(keyword)
         
         for each_job in self.job_list:
             if self.filtering(each_job):
@@ -337,13 +337,13 @@ class jobSpider():
                 pass
                 
         if fast == False:
+            filtered_job_list = random.sample(filtered_job_list, len(filtered_job_list))
             for each_job in filtered_job_list:
-#                time.sleep(random.randint(3,6))
                 if self.censoring(each_job):
                     true_job_list.append(each_job)
                 else:
                     pass
-            print('censored length:{}'.format(len(true_job_list)))
+            print('censored length:{}/{}'.format(len(true_job_list),len(filtered_job_list)))
             return true_job_list
         
         else:
@@ -354,5 +354,14 @@ class jobSpider():
 #q = dict(parse_qsl(o.query)) # or parse_qs(o.query)
 #r.encoding('gbk')
 #response = requests.request("GET", url, headers=headers, params=querystring)
-            
+if __name__ == "__main__":
+    job_cfgs = {
+        'python': {'stop':['弹性','大专' ], 'go':['应届','海外','硕士','quirement']},
+        '智能交通': {'stop':['弹性'], 'go':['应届','海外','硕士']},
+        '数据分析': {'stop':['弹性','大专'], 'go':['应届','海外','硕士']},
+        }
+    bot = jobSpider(job_cfgs)
+    bot.lagou('智能交通')
+    test = bot.job_list
+    print(len(test))
  
