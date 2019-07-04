@@ -18,8 +18,8 @@ def main():
     crawls_per_day = 3 # frequency of the crawling
     job_cfgs = {
         'python': {'stop':['弹性','大专' ], 'go':['应届','海外','硕士','quirement']},
-        '智能交通': {'stop':['弹性'], 'go':['应届','海外','硕士']},
-        '数据分析': {'stop':['弹性','大专'], 'go':['应届','海外','硕士']},
+        '交通': {'stop':['弹性'], 'go':['应届','海外','硕士']},
+#        '数据分析': {'stop':['弹性','大专'], 'go':['应届','海外','硕士']},
         }
     
     messager = tell_my_bot(token, chat_id)
@@ -35,7 +35,7 @@ def main():
                
             counter += 1
             time.sleep(86400/crawls_per_day + random.randint(-5000, 5000))
-        
+#            time.sleep(3)
         messager.send_to_me(db.fetch())
         db.clean()
         if db.pool_check():

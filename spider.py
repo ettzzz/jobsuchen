@@ -38,9 +38,13 @@ class jobSpider():
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.20 (KHTML, like Gecko) Chrome/19.0.1036.7 Safari/535.20",
             "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) Presto/2.9.168 Version/11.52",
             ]
+        self.cities = {
+                'shanghai':{'linkedin':'shanghai','indeed':'上海','liepin':'020','zhilian':'538','lagou':'上海'},
+                'beijing':{'linkedin':'beijing','indeed':'北京','liepin':'010','zhilian':'530','lagou':'北京'},
+                }
 
 
-    def linkedin(self, keyword):
+    def linkedin(self, keyword, city):
         base_url = 'https://cn.linkedin.com/jobs/search/'
         pages = self.crawl_size // 25 # 25 jobs/page 
         headers = {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'}
@@ -48,10 +52,10 @@ class jobSpider():
         
         for each_page in range(pages):
             params = {
-#                'f_JT': 'F', # foreign companies only
+                'f_JT': 'F', # foreign companies only
                 'f_TPR': 'r86400',
                 'keywords': keyword,
-                'location': 'shanghai', 
+                'location': city, 
                 'start': each_page * 25, 
                 'sortBy': 'DD',
                 }
@@ -77,7 +81,7 @@ class jobSpider():
                 continue
 
     
-    def indeed(self, keyword): 
+    def indeed(self, keyword, city): 
         base_url = 'https://cn.indeed.com/%E5%B7%A5%E4%BD%9C'
         pages = self.crawl_size // 50
         headers = {'User-Agent':random.choice(self.user_agents)}
@@ -96,7 +100,7 @@ class jobSpider():
                     'sr': 'directhire', # 过滤招聘中介
     #                'as_src': None, # 从这个求职网站
                     'radius': 50, # 位置半径km
-                    'l': '上海',
+                    'l': city,
                     'fromage': 3, # 3天前
                     'limit': 50, # jobs per page
                     'sort': 'date', # 排序方式
@@ -124,7 +128,7 @@ class jobSpider():
 #                print('request error with status_code {} at {}.'.format(r.status_code, r.url))
                 continue
     
-    def liepin(self, keyword): 
+    def liepin(self, keyword, city): 
         base_url = 'https://www.liepin.com/zhaopin/'
         pages = self.crawl_size // 40
         headers = {'User-Agent':random.choice(self.user_agents)}
@@ -133,9 +137,9 @@ class jobSpider():
             params = {"init":"-1",
                       "searchType":"1",
                       "headckid":"3b90473e084fa596",
-                      "dqs":"020",
+                      "dqs":city,
                       "pubTime":"3",
-                      "compkind":"010",
+                      "compkind":"010", # foreign companies
                       "fromSearchBtn":"2",
                       "ckid":"7bfc0aebc74f03a6",
                       "degradeFlag":"0",
@@ -172,13 +176,13 @@ class jobSpider():
                 continue
 
     
-    def zhilian(self, keyword): 
+    def zhilian(self, keyword, city): 
         pages = self.crawl_size // 90
         url_parse = 'https://fe-api.zhaopin.com/c/i/sou'
         
         for each_page in range(pages):
             params = {
-                 'jl': '538',
+                 'jl': city,
                  'ct': '2',
                  'kw': keyword,
                  'kt': '3',
@@ -196,7 +200,7 @@ class jobSpider():
             params_parse = {
                 "pageSize":"90",
                 "start": str(each_page*90),
-                "cityId":"538",
+                "cityId":city,
                 "salary":"0,0",
                 "workExperience":"-1",
                 "education":"-1",
@@ -230,11 +234,11 @@ class jobSpider():
     
     
     
-    def lagou(self, keyword): 
+    def lagou(self, keyword, city): 
         pages = self.crawl_size // 15
         
         url_start = 'https://www.lagou.com/jobs/list_{}?labelWords=&fromSearch=true&suginput='.format(quote(keyword))
-        url_parse = 'https://www.lagou.com/jobs/positionAjax.json?city=上海&needAddtionalResult=false'
+        url_parse = 'https://www.lagou.com/jobs/positionAjax.json?city={}&needAddtionalResult=false'.format(city)
         headers = {
                 'Accept': 'application/json, text/javascript, */*',
                 'Referer': url_start,
@@ -274,9 +278,10 @@ class jobSpider():
     def filtering(self, each_job):
         filter_key = False
         
-        if each_job['Keyword'][1:] not in each_job['Position']:
-            pass
-        elif '某' in each_job['Company'] or '一线' in each_job['Company']:
+#        if each_job['Keyword'][1:] not in each_job['Position']:
+#            pass
+#        elif '某' in each_job['Company'] or '一线' in each_job['Company]:
+        if '某' in each_job['Company'] or '一线' in each_job['Company']:
             pass
         elif '实习' in each_job['Position'] or '销售' in each_job['Position']:
             pass
@@ -291,7 +296,7 @@ class jobSpider():
     def censoring(self, each_job):
         censor_key = True
         stop_words = self.cfgs[each_job['Keyword']]['stop']
-        go_words = self.cfgs[each_job['Keyword']]['go']
+#        go_words = self.cfgs[each_job['Keyword']]['go']
         headers = {'User-Agent':random.choice(self.user_agents)}
         
         try:
@@ -324,11 +329,12 @@ class jobSpider():
         true_job_list = []
         self.job_list = []
         
-        self.linkedin(keyword)
-        self.indeed(keyword)
-        self.liepin(keyword)
-        self.zhilian(keyword)
-        self.lagou(keyword)
+        for each_city in self.cities.items():  
+            self.linkedin(keyword, each_city[1]['linkedin'])
+            self.indeed(keyword, each_city[1]['indeed'])
+            self.liepin(keyword, each_city[1]['liepin'])
+            self.zhilian(keyword, each_city[1]['zhilian'])
+            self.lagou(keyword, each_city[1]['lagou'])
         
         for each_job in self.job_list:
             if self.filtering(each_job):
@@ -357,8 +363,7 @@ class jobSpider():
 if __name__ == "__main__":
     job_cfgs = {
         'python': {'stop':['弹性','大专' ], 'go':['应届','海外','硕士','quirement']},
-        '智能交通': {'stop':['弹性'], 'go':['应届','海外','硕士']},
-        '数据分析': {'stop':['弹性','大专'], 'go':['应届','海外','硕士']},
+        '交通': {'stop':['弹性'], 'go':['应届','海外','硕士']},
         }
     bot = jobSpider(job_cfgs)
     bot.lagou('智能交通')
