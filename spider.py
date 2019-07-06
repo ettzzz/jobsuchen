@@ -47,7 +47,7 @@ class jobSpider():
     def linkedin(self, keyword, city):
         base_url = 'https://cn.linkedin.com/jobs/search/'
         pages = self.crawl_size // 25 # 25 jobs/page 
-        headers = {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'}
+        headers = {'User-Agent':random.choice(self.user_agents)}
         release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
         
         for each_page in range(pages):
@@ -61,6 +61,7 @@ class jobSpider():
                 }
             try:
                 r = requests.get(base_url, headers = headers, params = params, timeout = 10)
+                time.sleep(5)
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs = html.select('a[data-job-id]') # tag a with attribute data-job-id # or html.find_all(name = 'li', attrs = {'class':'jobs-search-result-item'})
                 for each_job in jobs:
@@ -214,17 +215,18 @@ class jobSpider():
             }
             try:
                 r = requests.get(url_parse, headers = headers, params = params_parse, timeout = 10)
+                time.sleep(5)
                 jobs = r.json()['data']['results']
                 for each_job in jobs:
                     cache = {
-                            'UID': str(each_job['SOU_POSITION_ID']),
+                            'UID': str(each_job['number']),
                             'Source': 'zhilian',
                             'Position': each_job['jobName'],
                             'Release': each_job['updateDate'].split(' ')[0][-5:],
                             'Company': each_job['company']['name'],
                             'Location': each_job['city']['display'],
                             'Payment': each_job['salary'],
-                            'URL': 'https://jobs.zhaopin.com/{}.htm'.format(each_job['SOU_POSITION_ID']),
+                            'URL': each_job['positionURL'],
                             'Keyword': keyword,
                             }
                     self.job_list.append(cache)
@@ -239,13 +241,22 @@ class jobSpider():
         
         url_start = 'https://www.lagou.com/jobs/list_{}?labelWords=&fromSearch=true&suginput='.format(quote(keyword))
         url_parse = 'https://www.lagou.com/jobs/positionAjax.json?city={}&needAddtionalResult=false'.format(city)
-        headers = {
+        headers_parse = {
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'Referer': url_start,
+                'Cache-Control': 'keep-alive',
+                'Content-Length': '25',
+                'Content-Type': 'application/x-www.form.urlencoded; charset=UTF-8',
+                'User-Agent': random.choice(self.user_agents),
+                'Host': 'www.lagou.com',
+                }
+        headers_start = {
                 'Accept': 'application/json, text/javascript, */*',
                 'Referer': url_start,
                 'User-Agent': random.choice(self.user_agents),
                 }
         s = requests.Session()
-        s.get(url_start, headers = headers)
+        s.get(url_start, headers = headers_start)
         cookies = s.cookies  
         for each_page in range(pages):
             first_page = 'true' if each_page == 0 else 'false'
@@ -255,7 +266,8 @@ class jobSpider():
                     'kd': keyword,
                     }
             try:
-                r = s.post(url_parse, data=data, headers=headers, cookies=cookies, timeout=15)
+                r = s.post(url_parse, data=data, headers=headers_parse, cookies=cookies, timeout=15)
+                time.sleep(5)
                 jobs = r.json()['content']['positionResult']['result']
                 for each_job in jobs:
                     cache = {
