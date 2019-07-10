@@ -50,7 +50,7 @@ class jobSpider():
                 'zhilian':'div.describtion > div.describtion__detail-content',
                 'liepin':'div.content.content-word',
                 'lagou':'div.job-detail',
-                'bosszhipin':None,
+                'bosszhipin':'div.detail-content > div.job-sec > h3 > div.text',
                 'yingjie':None,
                 }
 
@@ -394,7 +394,7 @@ class jobSpider():
         
         for each_city in self.cities.items():  
             self.linkedin(keyword, each_city[1]['linkedin'])
-#            self.indeed(keyword, each_city[1]['indeed'])
+            self.indeed(keyword, each_city[1]['indeed'])
             self.liepin(keyword, each_city[1]['liepin'])
             self.zhilian(keyword, each_city[1]['zhilian'])
             self.lagou(keyword, each_city[1]['lagou'])

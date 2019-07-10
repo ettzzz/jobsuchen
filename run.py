@@ -30,12 +30,15 @@ def main():
     while True:
         counter = 0
         while counter < crawls_per_day: 
+            t_start = time.time()
             for each_keyword in list(job_cfgs.keys()):
                 each_job_list = agent.scheduler(each_keyword)
                 db.insert(each_job_list)
-               
+            t_crawl = int(time.time() - t_start())
             counter += 1
-            time.sleep(86400/crawls_per_day + random.randint(-5000, 5000))
+            t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
+            t_sleep = t_sleep if t_sleep > 0 else 0
+            time.sleep(t_sleep)
 #            time.sleep(3)
         messager.send_to_me(db.fetch())
         db.clean()
