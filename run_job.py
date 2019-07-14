@@ -18,10 +18,10 @@ job_cfgs = {
             'jobs':
                 {
                 'python后端': {'stop':['大专', '专科', '抗压','adoop',], 'go':['应届','海外','硕士','研究生','quirement','raduate','JavaScript']},
-#                'python爬虫': {'stop':['大专', '专科', '抗压','crapy','ava'], 'go':['应届','海外','硕士','研究生','quirement','raduate']},
-#                '智能交通': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
-#                '交通工程': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
-#                '智慧交通': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
+                'python爬虫': {'stop':['大专', '专科', '抗压','crapy','ava'], 'go':['应届','海外','硕士','研究生','quirement','raduate']},
+                '智能交通': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
+                '交通工程': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
+                '智慧交通': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
                 },
             'filters':
                 {
@@ -30,22 +30,22 @@ job_cfgs = {
                 },
             'cities':
                 {
-#                'shanghai':{
-#                            'linkedin':'cnERSATZ3A8909',
-#                            'indeed':'上海',
-#                            'liepin':'020',
-#                            'zhilian':'538',
-#                            'lagou':'上海',
-#                            'bosszhipin':'101020100'
-#                            },
-#                'beijing':{
-#                            'linkedin':'cnERSATZ3A8911',
-#                            'indeed':'北京',
-#                            'liepin':'010',
-#                            'zhilian':'530',
-#                            'lagou':'北京',
-#                            'bosszhipin':'101010100'
-#                            },
+                'shanghai':{
+                            'linkedin':'cnERSATZ3A8909',
+                            'indeed':'上海',
+                            'liepin':'020',
+                            'zhilian':'538',
+                            'lagou':'上海',
+                            'bosszhipin':'101020100'
+                            },
+                'beijing':{
+                            'linkedin':'cnERSATZ3A8911',
+                            'indeed':'北京',
+                            'liepin':'010',
+                            'zhilian':'530',
+                            'lagou':'北京',
+                            'bosszhipin':'101010100'
+                            },
                 'shenzhen':{
                             'linkedin':'cnERSATZ3A8910',
                             'indeed':'深圳',
