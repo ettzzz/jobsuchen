@@ -33,7 +33,7 @@ class tellMyBot():
             for each_job in all_jobs:
                 bot_params = {
                         'chat_id': self.chat_id,
-                        'text': self.build_html_message(each_job),
+                        'text': self.buildHtmlMessage(each_job),
                         'disable_web_page_preview': 'True',
                         'parse_mode': 'HTML',
                         }

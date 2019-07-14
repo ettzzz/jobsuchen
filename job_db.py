@@ -39,7 +39,9 @@ class jobDataBase():
                             );'.format(self.job_table))
             self.conn.commit()
         except: # gebraucht or unexpected exit
-            self.clean()
+            # self.clean()
+            print('job table already there')
+            pass
 
     def insert(self, true_job_list):
         homogenization = '{},' * self.n_columns
@@ -54,7 +56,7 @@ class jobDataBase():
             except:
                 print('job db has some problems \n')
                 print(traceback.format_exc())
-                pass
+                continue
         self.conn.commit()
     
     def fetch(self):
