@@ -12,9 +12,8 @@ import random
 from job_db import jobDataBase
 from bot import tellMyBot
 from spider import jobSpider
-#from lokale.var import token, chat_id
-token = '764684634:AAHmOxQfMXIHog8q9qaj8Ji2v8SzHJZmt7U'
-chat_id = '476917241'
+from lokale.var import token, chat_id
+
 
 job_cfgs = {
             'jobs':
