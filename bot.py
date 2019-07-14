@@ -21,7 +21,8 @@ class tellMyBot():
 
     def buildHtmlMessage(self, each_job): 
         try:
-            title = each_job[1] + '|' + each_job[2] + '|' + each_job[3] + '|' + each_job[4]
+            title = each_job[1] + '|' + each_job[2] + '|' + each_job[3] + '|' + each_job[4] + '|' + each_job[5]
+            # Source, Position, Release, Comapny, Location
             text = '<a href="{}">{}</a>'.format(each_job[-2], title)
         except:
             text = 'HTML message Error'

@@ -8,6 +8,7 @@ Created on Mon May  6 10:22:02 2019
 
 
 import sqlite3
+import traceback
 
 class jobDataBase():
     
@@ -18,6 +19,8 @@ class jobDataBase():
         self.conn = sqlite3.connect(self.database)
         self.c = self.conn.cursor()
         self.initiate()
+        self.c.execute("PRAGMA table_info({})".format(self.job_table))
+        self.n_columns = len(self.c.fetchall())
         
     def initiate(self):
         try:
@@ -35,21 +38,21 @@ class jobDataBase():
                             Comment TEXT\
                             );'.format(self.job_table))
             self.conn.commit()
-        except: # gebraucht
+        except: # gebraucht or unexpected exit
             self.clean()
 
     def insert(self, true_job_list):
-        homogenization = '{},' * len([*true_job_list[0]])
+        homogenization = '{},' * self.n_columns
         homo = homogenization[:-1]
         
         for each_job in true_job_list:
-#            try:
-            self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
-            self.c.execute(
-                "INSERT INTO {} ({}) VALUES {};".format(self.job_table, homo.format(*each_job), tuple(each_job.values()))
-                )
-#            except:
-#                pass
+            try:
+                self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
+                self.c.execute(
+                    "INSERT INTO {} ({}) VALUES {};".format(self.job_table, homo.format(*each_job), tuple(each_job.values()))
+                    )
+            except:
+                pass
         self.conn.commit()
     
     def fetch(self):

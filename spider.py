@@ -102,7 +102,7 @@ class jobSpider():
         headers = {'User-Agent':random.choice(self.user_agents)}
 
         try:
-            r = requests.get(each_job['URL'], headers = headers, proxies = None, timeout = 15)
+            r = requests.get(each_job['URL'], headers = headers, proxies = None, timeout = 7.5)
             time.sleep(self.randomwait())
             html = BeautifulSoup(r.text, 'html.parser')
             d = html.select(self.description_css[each_job['Source']])[0]
@@ -111,19 +111,18 @@ class jobSpider():
                 print('wryyyyyyyyyy Description Verbot', d)
                 censor_key = False
             if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['go']):
-                print('wryyyyyyyyyy Description green channel', d)
+#                print('wryyyyyyyyyy Description green channel', d)
                 censor_key = True
                 
         except Exception as e:
-            # if 'list index out of range' in traceback.print_exc():
-            #     print('Possible css selector error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
-            # elif 'timeout' in traceback.print_exc():
-            #     print('Timeout error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
-            # else:
-            #     print('Some other errors as below.\n')
-            #     print(traceback.print_exc() + '\n')
-            print(traceback.format_exc() + '\n')
-            censor_key = False
+             if 'list index out of range' in traceback.format_exc():
+                 print('Possible css selector error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
+             elif 'timeout' in traceback.format_exc():
+                 print('Timeout error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
+             else:
+                 print('Some other errors as below.\n')
+                 print(traceback.format_exc() + '\n')
+                 censor_key = False
         
         return censor_key
 
@@ -146,7 +145,7 @@ class jobSpider():
                 }
             try:
                 url_parse = 'https://www.linkedin.com/jobs/search' + '?' + urlencode(params)
-                r = requests.get(url_parse.replace('ERSATZ', '%'), headers = headers,  timeout = 15)
+                r = requests.get(url_parse.replace('ERSATZ', '%'), headers = headers,  timeout = 7.5)
                 time.sleep(self.randomwait())
                 html = BeautifulSoup(r.text, 'html.parser')
 #                jobs = html.select('a[data-job-id]') # tag a with attribute data-job-id 
@@ -200,7 +199,7 @@ class jobSpider():
                     'start': each_page * 50
                     }
             try:
-                r = requests.get(url_parse, headers = headers, params = params, timeout = 15)
+                r = requests.get(url_parse, headers = headers, params = params, timeout = 7.5)
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs = html.select('div[data-tn-component]')
                 for each_job in jobs:
@@ -247,7 +246,7 @@ class jobSpider():
                       "d_headId":"37532abf95b160ab64a582ccf0d7efaf",
                       "curPage":str(each_page)}
             try:
-                r = requests.get(url_parse, headers = headers, params = params, timeout = 15)
+                r = requests.get(url_parse, headers = headers, params = params, timeout = 7.5)
                 time.sleep(self.randomwait())
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs = html.select('ul.sojob-list > li')
@@ -313,7 +312,7 @@ class jobSpider():
                 "x-zp-page-request-id":"72d284de0afe4ce6a6a662736a5145e2-{}-{}".format(int(1000*time.time()), random.randint(0,1000000))
             }
             try:
-                r = requests.get(url_parse, headers = headers, params = params_parse, timeout = 15)
+                r = requests.get(url_parse, headers = headers, params = params_parse, timeout = 7.5)
                 time.sleep(self.randomwait())
                 jobs = r.json()['data']['results']
                 for each_job in jobs:
@@ -368,7 +367,7 @@ class jobSpider():
                 }
         
         s = requests.Session()
-        s.get(url_start, headers = headers_parse, timeout = 10)
+        s.get(url_start, headers = headers_parse, timeout = 7.5)
         for each_page in range(pages):
             first_page = 'true' if each_page == 0 else 'false'
             data = {
@@ -377,7 +376,7 @@ class jobSpider():
                     'kd': keyword,
                     }
             try:
-                r = s.post(url_parse, data=data, headers=headers_parse, cookies=s.cookies, timeout=15)
+                r = s.post(url_parse, data=data, headers=headers_parse, cookies=s.cookies, timeout = 7.5)
                 time.sleep(self.randomwait())
                 jobs = r.json()['content']['positionResult']['result']
                 for each_job in jobs:
@@ -425,7 +424,7 @@ class jobSpider():
                 }
         
         s = requests.Session()
-        s.get('https://www.zhipin.com/', headers = headers_start, timeout = 15)
+        s.get('https://www.zhipin.com/', headers = headers_start, timeout = 7.5)
         
         for each_page in range(pages):
             params = {
@@ -454,7 +453,7 @@ class jobSpider():
                 'X-Requested-With':'XMLHttpRequest'
                 }
             try:
-                r = requests.get(url_parse, headers = headers_parse, params = params, cookies = s.cookies, timeout = 15)
+                r = requests.get(url_parse, headers = headers_parse, params = params, cookies = s.cookies, timeout = 7.5)
                 time.sleep(self.randomwait())
                 if '异常' in r.text:
                     # terminate? must send an alert
@@ -491,30 +490,33 @@ class jobSpider():
 
 if __name__ == "__main__":
     job_cfgs = {
-                'jobs':
-                    {
-                    'python后端': {'stop':['弹性','大专' ], 'go':['应届','海外','硕士','quirement']},
-                    },
-                'filters':
-                    {
-                    'company_stops':['某','一线','知名'],
-                    'position_stops':['实习','销售','经理','高级','ava','++',],
-                    },
-                'cities':
-                    {
-                    'beijing':{
-                                'linkedin':'beijing',
-                                'indeed':'北京',
-                                'liepin':'010',
-                                'zhilian':'530',
-                                'lagou':'北京',
-                                'bosszhipin':'101010100'
-                                },
-                    },
-                }
+            'jobs':
+                {
+                'python后端': {'stop':['大专', '专科', '抗压','adoop',], 'go':['应届','海外','硕士','研究生','quirement','raduate','JavaScript']},
+                'python爬虫': {'stop':['大专', '专科', '抗压','crapy','ava'], 'go':['应届','海外','硕士','研究生','quirement','raduate']},
+                'python数据分析': {'stop':['大专','adoop','抗压','数学'], 'go':['应届','海外','硕士','quirement','raduate']},
+                },
+            'filters':
+                {
+                'company_stops':['某','一线','知名','百度','aidu'],
+                'position_stops':['实习','销售','经理','高级','资深','文案','ava','++',],
+                },
+            'cities':
+                {
+                'shenzhen':{
+                            'linkedin':'cnERSATZ3A8910',
+                            'indeed':'深圳',
+                            'liepin':'050090',
+                            'zhilian':'765',
+                            'lagou':'深圳',
+                            'bosszhipin':'101280600'
+                        }
+                },
+
+            }
                     
     bot = jobSpider(job_cfgs)
-#    bot.lagou('python后端', '北京')
+    bot.liepin('python后端', '深圳')
     filtered = bot.scheduler('python后端')
     ori = bot.job_list
     print(len(ori))
@@ -528,7 +530,7 @@ if __name__ == "__main__":
 #
 #    headers = {'User-Agent':"Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) Presto/2.9.168 Version/11.52"}
 #    for each_job in tmp:        
-#        r = requests.get(each_job['URL'], headers = headers, timeout = 15)
+#        r = requests.get(each_job['URL'], headers = headers, timeout = 7.5)
 #        time.sleep(random.randint(3,5))
 #        html = BeautifulSoup(r.text, 'html.parser')
 #        d = html.select('div.detail-content > div.job-sec > div.text')[0]
