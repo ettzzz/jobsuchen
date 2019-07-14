@@ -60,7 +60,7 @@ job_cfgs = {
 
 
 def main(configurations):
-    crawls_per_day = 3 # frequency of the crawling
+    crawls_per_day = 2 # frequency of the crawling
     messager = tellMyBot(token, chat_id)
     agent = jobSpider(configurations)
     db = jobDataBase()
@@ -80,7 +80,7 @@ def main(configurations):
             time.sleep(3)
             print('I\'m testing!')
         messager.send2me(db.fetch())
-        db.clean()
+        # db.clean()
         if db.pool_check():
             messager.poolAlert(db.pool_level())
             

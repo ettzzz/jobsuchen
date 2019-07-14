@@ -52,6 +52,8 @@ class jobDataBase():
                     "INSERT INTO {} ({}) VALUES {};".format(self.job_table, homo.format(*each_job), tuple(each_job.values()))
                     )
             except:
+                print('job db has some problems \n')
+                print(traceback.format_exc())
                 pass
         self.conn.commit()
     
