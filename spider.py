@@ -51,12 +51,12 @@ class jobSpider():
         filtered_job_list = []
         
         for each_city in [*self.cfgs['cities']]:  
-            # self.linkedin(keyword, self.cfgs['cities'][each_city]['linkedin'])
-            # self.indeed(keyword, self.cfgs['cities'][each_city]['indeed'])
+             self.linkedin(keyword, self.cfgs['cities'][each_city]['linkedin'])
+             self.indeed(keyword, self.cfgs['cities'][each_city]['indeed'])
              self.liepin(keyword, self.cfgs['cities'][each_city]['liepin'])
-            # self.zhilian(keyword, self.cfgs['cities'][each_city]['zhilian'])
+             self.zhilian(keyword, self.cfgs['cities'][each_city]['zhilian'])
 #            self.lagou(keyword, self.cfgs['cities'][each_city]['lagou'])
-#            self.bosszhipin(keyword, self.cfgs['cities'][each_city]['bosszhipin'])
+            self.bosszhipin(keyword, self.cfgs['cities'][each_city]['bosszhipin'])
             
         for i, each_job in enumerate(random.sample(self.job_list,len(self.job_list))):
             if self.filtering(each_job) and self.censoring(each_job):
