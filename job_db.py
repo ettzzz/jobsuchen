@@ -39,9 +39,7 @@ class jobDataBase():
                             );'.format(self.job_table))
             self.conn.commit()
         except: # gebraucht or unexpected exit
-            # self.clean()
-            print('job table already there')
-            pass
+            self.clean()
 
     def insert(self, true_job_list):
         homogenization = '{},' * self.n_columns
