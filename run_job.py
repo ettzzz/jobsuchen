@@ -60,7 +60,7 @@ job_cfgs = {
 
 
 def main(configurations):
-    crawls_per_day = 1 # frequency of the crawling
+    crawls_per_day = 2 # frequency of the crawling
     messager = tellMyBot(token, chat_id)
     agent = jobSpider(configurations)
     db = jobDataBase()
@@ -69,22 +69,23 @@ def main(configurations):
         counter = 0
         while counter < crawls_per_day: 
             t_start = time.time()
+            
             for each_keyword in list(configurations['jobs'].keys()):
                 each_job_list = agent.scheduler(each_keyword)
                 db.insert(each_job_list)
+            
+            messager.send2me(db.fetch())
+            db.clean()
+            
             t_crawl = int(time.time() - t_start)
-            counter += 1
             t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
             t_sleep = t_sleep if t_sleep > 0 else 0
-            # time.sleep(t_sleep)
-            time.sleep(3)
-        
-        messager.send2me(db.fetch())
-        db.clean()
+            time.sleep(t_sleep)
+            time.sleep(3) # for test purpose
+            counter += 1
         
         if db.pool_check():
             messager.poolAlert(db.pool_level())
-        break
             
 if __name__ == '__main__':
     main(job_cfgs)
