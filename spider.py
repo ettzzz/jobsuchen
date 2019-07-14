@@ -102,7 +102,7 @@ class jobSpider():
         headers = {'User-Agent':random.choice(self.user_agents)}
 
         try:
-            r = requests.get(each_job['URL'], headers = headers, proxies = self.proxies(), timeout = 15)
+            r = requests.get(each_job['URL'], headers = headers, proxies = None, timeout = 15)
             time.sleep(self.randomwait())
             html = BeautifulSoup(r.text, 'html.parser')
             d = html.select(self.description_css[each_job['Source']])[0]
@@ -145,7 +145,7 @@ class jobSpider():
                 }
             try:
                 url_parse = 'https://www.linkedin.com/jobs/search' + '?' + urlencode(params)
-                r = requests.get(url_parse.replace('ERSATZ', '%'), headers = headers, proxies = self.proxies(), timeout = 15)
+                r = requests.get(url_parse.replace('ERSATZ', '%'), headers = headers,  timeout = 15)
                 time.sleep(self.randomwait())
                 html = BeautifulSoup(r.text, 'html.parser')
 #                jobs = html.select('a[data-job-id]') # tag a with attribute data-job-id 
@@ -199,7 +199,7 @@ class jobSpider():
                     'start': each_page * 50
                     }
             try:
-                r = requests.get(url_parse, headers = headers, params = params, proxies = self.proxies(), timeout = 15)
+                r = requests.get(url_parse, headers = headers, params = params, timeout = 15)
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs = html.select('div[data-tn-component]')
                 for each_job in jobs:
@@ -246,7 +246,7 @@ class jobSpider():
                       "d_headId":"37532abf95b160ab64a582ccf0d7efaf",
                       "curPage":str(each_page)}
             try:
-                r = requests.get(url_parse, headers = headers, params = params, proxies = self.proxies(), timeout = 15)
+                r = requests.get(url_parse, headers = headers, params = params, timeout = 15)
                 time.sleep(self.randomwait())
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs = html.select('ul.sojob-list > li')
@@ -312,7 +312,7 @@ class jobSpider():
                 "x-zp-page-request-id":"72d284de0afe4ce6a6a662736a5145e2-{}-{}".format(int(1000*time.time()), random.randint(0,1000000))
             }
             try:
-                r = requests.get(url_parse, headers = headers, params = params_parse, proxies = self.proxies(), timeout = 15)
+                r = requests.get(url_parse, headers = headers, params = params_parse, timeout = 15)
                 time.sleep(self.randomwait())
                 jobs = r.json()['data']['results']
                 for each_job in jobs:
@@ -367,7 +367,7 @@ class jobSpider():
                 }
         
         s = requests.Session()
-        s.get(url_start, headers = headers_parse, proxies = self.proxies(), timeout = 10)
+        s.get(url_start, headers = headers_parse, timeout = 10)
         for each_page in range(pages):
             first_page = 'true' if each_page == 0 else 'false'
             data = {
@@ -376,7 +376,7 @@ class jobSpider():
                     'kd': keyword,
                     }
             try:
-                r = s.post(url_parse, data=data, headers=headers_parse, cookies=s.cookies, proxies = self.proxies(), timeout=15)
+                r = s.post(url_parse, data=data, headers=headers_parse, cookies=s.cookies, timeout=15)
                 time.sleep(self.randomwait())
                 jobs = r.json()['content']['positionResult']['result']
                 for each_job in jobs:
@@ -424,7 +424,7 @@ class jobSpider():
                 }
         
         s = requests.Session()
-        s.get('https://www.zhipin.com/', headers = headers_start, proxies = self.proxies(), timeout = 15)
+        s.get('https://www.zhipin.com/', headers = headers_start, timeout = 15)
         
         for each_page in range(pages):
             params = {
@@ -453,7 +453,7 @@ class jobSpider():
                 'X-Requested-With':'XMLHttpRequest'
                 }
             try:
-                r = requests.get(url_parse, headers = headers_parse, params = params, cookies = s.cookies, proxies = self.proxies(), timeout = 15)
+                r = requests.get(url_parse, headers = headers_parse, params = params, cookies = s.cookies, timeout = 15)
                 time.sleep(self.randomwait())
                 if '异常' in r.text:
                     # terminate? must send an alert
