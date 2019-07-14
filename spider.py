@@ -115,13 +115,14 @@ class jobSpider():
                 censor_key = True
                 
         except Exception as e:
-            if 'list index out of range' in traceback.print_exc():
-                print('Possible css selector error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
-            elif 'timeout' in traceback.print_exc():
-                print('Timeout error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
-            else:
-                print('Some other errors as below.\n')
-                print(traceback.print_exc() + '\n')
+            # if 'list index out of range' in traceback.print_exc():
+            #     print('Possible css selector error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
+            # elif 'timeout' in traceback.print_exc():
+            #     print('Timeout error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
+            # else:
+            #     print('Some other errors as below.\n')
+            #     print(traceback.print_exc() + '\n')
+            print(traceback.format_exc() + '\n')
             censor_key = False
         
         return censor_key
@@ -167,7 +168,7 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of linkedin as below.\n {}\n'.format(traceback.print_exc()))
+                print('Spider error of linkedin as below.\n {}\n'.format(traceback.format_exc()))
                 continue
             
             
@@ -217,7 +218,7 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of indeed as below.\n {}\n'.format(traceback.print_exc()))
+                print('Spider error of indeed as below.\n {}\n'.format(traceback.format_exc()))
                 continue
     
     
@@ -268,7 +269,7 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of liepin as below.\n {}\n'.format(traceback.print_exc()))
+                print('Spider error of liepin as below.\n {}\n'.format(traceback.format_exc()))
                 continue
 
     
@@ -330,7 +331,7 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of zhilian as below.\n {}\n'.format(traceback.print_exc()))
+                print('Spider error of zhilian as below.\n {}\n'.format(traceback.format_exc()))
                 continue
     
     
@@ -476,7 +477,7 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of bosszhipin as below.\n {}\n'.format(traceback.print_exc()))
+                print('Spider error of bosszhipin as below.\n {}\n'.format(traceback.format_exc()))
                 continue   
 
     
