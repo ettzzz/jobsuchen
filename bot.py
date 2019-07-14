@@ -10,7 +10,7 @@ Created on Mon May  6 10:22:33 2019
 import requests
 import time
 
-class tell_my_bot():
+class tellMyBot():
 
     def __init__(self, token, chat_id):
         self.token = token
@@ -19,7 +19,7 @@ class tell_my_bot():
         self.header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) \
           AppleWebKit/535.20 (KHTML, like Gecko) Chrome/19.0.1036.7 Safari/535.20'}
 
-    def build_html_message(self, each_job): 
+    def buildHtmlMessage(self, each_job): 
         try:
             title = each_job[1] + '|' + each_job[2] + '|' + each_job[3] + '|' + each_job[4]
             text = '<a href="{}">{}</a>'.format(each_job[-2], title)
@@ -27,8 +27,8 @@ class tell_my_bot():
             text = 'HTML message Error'
         return text
 
-    def send_to_me(self, all_jobs):
-        if len(all_jobs) < 100:
+    def send2me(self, all_jobs):
+        if len(all_jobs) < 200:
             for each_job in all_jobs:
                 bot_params = {
                         'chat_id': self.chat_id,
@@ -45,7 +45,7 @@ class tell_my_bot():
                         }
             requests.get(self.api_base, headers=self.header, params=bot_params)
             
-    def pool_reminder(self, pool_level):
+    def poolAlert(self, pool_level):
         bot_params = {
                         'chat_id': self.chat_id,
                         'text': 'The pool level is exceeding the threshold! The current level is {}.'.format(pool_level),
