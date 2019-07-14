@@ -19,7 +19,6 @@ job_cfgs = {
                 {
                 'python后端': {'stop':['大专', '专科', '抗压','adoop',], 'go':['应届','海外','硕士','研究生','quirement','raduate','JavaScript']},
                 'python爬虫': {'stop':['大专', '专科', '抗压','crapy','ava'], 'go':['应届','海外','硕士','研究生','quirement','raduate']},
-                'python数据分析': {'stop':['大专','adoop','抗压','数学'], 'go':['应届','海外','硕士','quirement','raduate']},
                 '智能交通': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
                 '交通工程': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
                 '智慧交通': {'stop':['轨道','大专', '专科',], 'go':['应届','海外','硕士','研究生',]},
@@ -77,8 +76,9 @@ def main(configurations):
             counter += 1
             t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
             t_sleep = t_sleep if t_sleep > 0 else 0
-            time.sleep(t_sleep)
+            # time.sleep(t_sleep)
             time.sleep(3)
+            print('I\'m testing!')
         messager.send2me(db.fetch())
         db.clean()
         if db.pool_check():
