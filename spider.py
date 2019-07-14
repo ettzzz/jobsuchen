@@ -51,10 +51,10 @@ class jobSpider():
         filtered_job_list = []
         
         for each_city in [*self.cfgs['cities']]:  
-             self.linkedin(keyword, self.cfgs['cities'][each_city]['linkedin'])
-             self.indeed(keyword, self.cfgs['cities'][each_city]['indeed'])
-             self.liepin(keyword, self.cfgs['cities'][each_city]['liepin'])
-             self.zhilian(keyword, self.cfgs['cities'][each_city]['zhilian'])
+            self.linkedin(keyword, self.cfgs['cities'][each_city]['linkedin'])
+            self.indeed(keyword, self.cfgs['cities'][each_city]['indeed'])
+            self.liepin(keyword, self.cfgs['cities'][each_city]['liepin'])
+            self.zhilian(keyword, self.cfgs['cities'][each_city]['zhilian'])
 #            self.lagou(keyword, self.cfgs['cities'][each_city]['lagou'])
             self.bosszhipin(keyword, self.cfgs['cities'][each_city]['bosszhipin'])
             
