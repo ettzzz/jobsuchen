@@ -29,7 +29,7 @@ class tellMyBot():
         return text
 
     def send2me(self, all_jobs):
-        if len(all_jobs) < 200:
+        if len(all_jobs) < 300:
             for each_job in all_jobs:
                 bot_params = {
                         'chat_id': self.chat_id,

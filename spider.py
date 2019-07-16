@@ -1,31 +1,29 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon May  6 10:22:19 2019
+Created on Tue Jul 16 08:34:50 2019
 
-@author: eriti
+@author: ert
 """
 
-
+import sys
+import traceback
 import time
 import random
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlencode, quote, unquote
-import traceback
-#from job_debug import jobDebug
+from urllib.parse import urlencode, quote
+from itertools import product
 
 
 class jobSpider():
     
     def __init__(self, cfgs):
-        
-        self.crawl_size = 100
-        self.job_list = []
         self.cfgs = cfgs
+        self.crawl_size = self.cfgs['global']['crawl_size']
+        self.job_list = []
+        self.urls = []
         self.user_agents = [
             "Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)",
-            "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN) AppleWebKit/523.15 (KHTML, like Gecko, Safari/419.3) Arora/0.3 (Change: 287 c9dfb30)",
             "Mozilla/5.0 (X11; U; Linux; en-US) AppleWebKit/527+ (KHTML, like Gecko, Safari/419.3) Arora/0.6",
             "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.2pre) Gecko/20070215 K-Ninja/2.1.1",
             "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9) Gecko/20080705 Firefox/3.0 Kapiko/3.0",
@@ -40,122 +38,149 @@ class jobSpider():
                 'indeed':'#jobDescriptionText',
                 'zhilian':'div.describtion > div.describtion__detail-content',
                 'liepin':'div.content.content-word',
-                'lagou':'dl#job_detail.job_detail > dd.job_bt > div.job-detail',
+                'lagou':'dl#job_detail.job_detail dd.job_bt',
                 'bosszhipin':'div.detail-content > div.job-sec > div.text',
-                'yingjie':None,
+                }
+        self.html_css = {
+                'linkedin':'ul.jobs-search__results-list > li',
+                'indeed':'div[data-tn-component]',
+                'zhilian':'',
+                'liepin':'ul.sojob-list > li',
+                'lagou':'',
+                'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-    def scheduler(self, keyword):
-        
-        self.job_list = []
-        filtered_job_list = []
-        
-        for each_city in [*self.cfgs['cities']]:  
-            self.linkedin(keyword, self.cfgs['cities'][each_city]['linkedin'])
-            self.indeed(keyword, self.cfgs['cities'][each_city]['indeed'])
-            self.liepin(keyword, self.cfgs['cities'][each_city]['liepin'])
-            self.zhilian(keyword, self.cfgs['cities'][each_city]['zhilian'])
-#            self.lagou(keyword, self.cfgs['cities'][each_city]['lagou'])
-            self.bosszhipin(keyword, self.cfgs['cities'][each_city]['bosszhipin'])
+    def scheduler(self, fast = True):
+        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
+        for each_comp in comps:
+            self.urls.extend(self.URLBuilder(each_comp))
             
-        for i, each_job in enumerate(random.sample(self.job_list,len(self.job_list))):
-            if self.filtering(each_job) and self.censoring(each_job):
-                filtered_job_list.append(each_job)
+        self.urls = random.sample(self.urls,len(self.urls))
+        previous_source = self.urls[0]['source']
+        for each_dict in self.urls:
+            if previous_source == each_dict['source']:
+                self.randomwait()
+            else:
+                previous_source == each_dict['source']
+            self.URLParser(each_dict)
+        
+        filtered = []
+        for i, each_job in enumerate(self.job_list):
+            if self.filtering(each_job):
+                filtered.append(each_job)
+                
+        self.spiderCheck()
+                
+        if fast == False:
+            censored = []
+            filtered = (random.sample(filtered,len(filtered)))
+            previous_job = filtered[0]['Source']
+            for i, each_job in enumerate(filtered):
+                if previous_job == each_job['Source']:
+                    self.randomwait()
+                else:
+                    previous_job = each_job['Source']
+                if self.censoring(each_job):
+                    censored.append(each_job)
             
-        return filtered_job_list
-
-    def proxies(self):
+            return censored
+        else:
+            return filtered
     
-        proxies = None
-        try:
-            p = requests.get('http://www.ettzzz.me/proxy/get', timeout = 2)
-            if p.text[:4] == 'http':
-                proxies = {'http':p.text, 'https':p.text}
-        except:
-#            print('Fail to ask for a proxy. It\'s either timeout or no proxies available')
-            pass
-        return proxies
+    def URLBuilder(self, component):
+        city_name, keyword, source = component
+        city = self.cfgs['cities'][city_name][source]
+        return eval("self.{}('ersteURL', (city, keyword))".format(source))
     
-    
-    def randomwait(self):
-        return random.randint(3,5) + random.uniform(-1,1)
-
-
+    def URLParser(self, url_dict):
+        eval("self.{}('zweiteURL', url_dict)".format(url_dict['source']))
+        
     def filtering(self, each_job):
-        
         if each_job['URL'][:4] != 'http':
-#            print('wryyyyyyyyyy URL Falsch', each_job['URL'],each_job['Source'])
             return False
         elif any(each_verbot in each_job['Company'] for each_verbot in self.cfgs['filters']['company_stops']):
-#            print('wryyyyyyyyyy Company Verbot', each_job['Company'])
             return False
         elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['filters']['position_stops']):
-#            print('wryyyyyyyyyy Position Verbot', each_job['Position'], each_job['URL'])
+            return False
+        elif each_job['Keyword'][1:] not in each_job['Position']:
             return False
         else:
             return True
-
-                
+    
     def censoring(self, each_job):
-        
         censor_key = True
-        headers = {'User-Agent':random.choice(self.user_agents)}
+        for i, each_url in enumerate(self.urls):
+            if each_url['source'] == each_job['Source']:
+                headers = each_url['headers']
+                break
+            else:
+                headers = {'User-Agent':random.choice(self.user_agents)}
 
         try:
-            r = requests.get(each_job['URL'], headers = headers, proxies = None, timeout = 7.5)
-            time.sleep(self.randomwait())
+            if each_job['Source'] == 'lagou':
+                params_start = {
+                    'px':'new', # 排序
+                    'gx':'全职',
+                    'isSchoolJob':'1',
+                    'xl':'本科,硕士',
+                    'city':'',
+                    'labelWords':'',
+                    'fromSearch':'True',
+                    'suginput':'',
+                    }
+                url_start = 'https://www.lagou.com/jobs/list_{}?{}'.format(quote(each_job['Keyword']),urlencode(params_start))
+                s = requests.Session()
+                s.get(url_start, headers = headers)
+                r = requests.get(each_job['URL'], headers = headers, cookies = s.cookies, timeout = 10)
+            else:
+                r = requests.get(each_job['URL'], headers = headers, timeout = 10)
+            
             html = BeautifulSoup(r.text, 'html.parser')
             d = html.select(self.description_css[each_job['Source']])[0]
                 
             if any(each_sw in d for each_sw in self.cfgs['jobs'][each_job['Keyword']]['stop']):
-                print('wryyyyyyyyyy Description Verbot', d)
                 censor_key = False
             if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['go']):
-#                print('wryyyyyyyyyy Description green channel', d)
                 censor_key = True
-                
-        except Exception as e:
-             if 'list index out of range' in traceback.format_exc():
-                 print('Possible css selector error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
-             elif 'timeout' in traceback.format_exc():
-                 print('Timeout error at {} of {}.\n'.format(each_job['URL'], each_job['Source']))
-             else:
-                 print('Some other errors as below.\n')
-                 print(traceback.format_exc() + '\n')
-                 censor_key = False
-        
+        except:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            func_name = sys._getframe().f_code.co_name,
+            print('{}: {} Requests/CSS bug with {} / {} at {}.\n'.format(func_name, each_job['Source'], exc_value, exc_type, each_job['URL']))
         return censor_key
-
-
-    def linkedin(self, keyword, city):
-        
-        pages = self.crawl_size // 25 # 25 jobs/page 
-        headers = {'User-Agent':random.choice(self.user_agents)}
-        release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
-        
-        for each_page in range(pages):
-            params = {
-                'f_JT': 'F', # full time job
-                'f_TPR': 'r86400', # last 24 hr
-                'f_LF': 'f_EA', # less than 10 candidates
-                'keywords': keyword,
-                'locationId': city, 
-                'start': each_page * 25, 
-                'sortBy': 'DD',
-                }
-            try:
+    
+    def linkedin(self, category, _input):
+        if category == 'ersteURL':
+            urlsNheaders = []
+            city, keyword = _input
+            pages = self.crawl_size // 25 # 25 jobs/page 
+            for each_page in range(pages):
+                params = {
+                    'f_JT': 'F', # full time job
+                    'f_TPR': 'r86400', # last 24 hr
+                    'f_LF': 'f_EA', # less than 10 candidates
+                    'keywords': keyword,
+                    'locationId': city, 
+                    'start': each_page * 25, 
+                    'sortBy': 'DD',
+                    }
                 url_parse = 'https://www.linkedin.com/jobs/search' + '?' + urlencode(params)
-                r = requests.get(url_parse.replace('ERSATZ', '%'), headers = headers,  timeout = 7.5)
-                time.sleep(self.randomwait())
+                headers = {'User-Agent':random.choice(self.user_agents)}
+                urlsNheaders.append({'source':'linkedin', 'url':url_parse, 'headers':headers, 'keyword':keyword})
+            return urlsNheaders
+        elif category == 'zweiteURL':
+            url_parse = _input['url']
+            headers = _input['headers']
+            source = _input['source']
+            keyword = _input['keyword']
+            release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
+            try:
+                r = requests.get(url_parse.replace('ERSATZ', '%'), headers = headers,  timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-#                jobs = html.select('a[data-job-id]') # tag a with attribute data-job-id 
-#                jobs = html.find_all(name = 'li', attrs = {'class':'jobs-search-result-item'})
-                jobs = html.select('ul.jobs-search__results-list > li')
-
+                jobs = html.select(self.html_css[source])
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['data-id']),
-                            'Source': 'linkedin',
+                            'Source': source,
                             'Position': each_job.select('span.screen-reader-text')[0].get_text().strip(),
                             'Release': release,
                             'Company': each_job.select('div > h4')[0].get_text().strip(),
@@ -167,45 +192,48 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of linkedin as below.\n {}\n'.format(traceback.format_exc()))
-                continue
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                func_name = sys._getframe().f_code.co_name,
+                print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+        else:
+            print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
             
-            
-    def indeed(self, keyword, city): 
-        
-        url_parse = 'https://cn.indeed.com/%E5%B7%A5%E4%BD%9C'
-        pages = self.crawl_size // 50
-        headers = {'User-Agent':random.choice(self.user_agents)}
-        release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
-        
-        for each_page in range(pages):
-            params = {
-                    'as_and': keyword, # 包含所有关键字 
-    #                'as_phr': None, # 包含特定词语 
-    #                'as_any': None, # 包含这些关键字
-#                    'as_not': None, # 不包含这些关键字 
-#                    'as_ttl': keyword, # 职位名称中包含词语 
-    #                'as_cmp': None, # 从这个公司
-                    'jt': 'fulltime', # 工作类型 临时工什么的
-    #                'st': None, # 在以下网站搜索
-                    'sr': 'directhire', # 过滤招聘中介
-    #                'as_src': None, # 从这个求职网站
-                    'radius': 50, # 位置半径km
-                    'l': city,
-                    'fromage': 3, # 3天前
-                    'limit': 50, # jobs per page
-                    'sort': 'date', # 排序方式
-                    'psf': 'advsrch', # 搜索模式 advanced
-                    'start': each_page * 50
-                    }
+    def indeed(self, category, _input): 
+        if category == 'ersteURL':
+            urlsNheaders = []
+            city, keyword = _input
+            pages = self.crawl_size // 50
+            for each_page in range(pages):
+                params = {
+                        'as_and': keyword, # 包含所有关键字 
+                        'jt': 'fulltime', # 工作类型 临时工什么的
+                        'sr': 'directhire', # 过滤招聘中介
+                        'radius': 50, # 位置半径km
+                        'l': city,
+                        'fromage': 3, # 3天前
+                        'limit': 50, # jobs per page
+                        'sort': 'date', # 排序方式
+                        'psf': 'advsrch', # 搜索模式 advanced
+                        'start': each_page * 50
+                        }
+                url_parse = 'https://cn.indeed.com/%E5%B7%A5%E4%BD%9C' + '?' + urlencode(params)
+                headers = {'User-Agent':random.choice(self.user_agents)}
+                urlsNheaders.append({'source':'indeed', 'url':url_parse, 'headers':headers, 'keyword':keyword})
+            return urlsNheaders
+        elif category == 'zweiteURL':
+            url_parse = _input['url']
+            headers = _input['headers']
+            source = _input['source']
+            keyword = _input['keyword']
+            release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             try:
-                r = requests.get(url_parse, headers = headers, params = params, timeout = 7.5)
+                r = requests.get(url_parse, headers = headers, timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-                jobs = html.select('div[data-tn-component]')
+                jobs = html.select(self.html_css[source])
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['id']),
-                            'Source': 'indeed',
+                            'Source': source,
                             'Position': each_job.select('div.title')[0].get_text().strip(),
                             'Release': release,
                             'Company': each_job.select('span.company')[0].get_text().strip(),
@@ -217,46 +245,55 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of indeed as below.\n {}\n'.format(traceback.format_exc()))
-                continue
-    
-    
-    def liepin(self, keyword, city): 
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                func_name = sys._getframe().f_code.co_name,
+                print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+        else:
+            print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
         
-        url_parse = 'https://www.liepin.com/zhaopin/'
-        pages = self.crawl_size // 40
-        headers = {'User-Agent':random.choice(self.user_agents)}
-        
-        for each_page in range(pages):
-            params = {"init":"-1",
-                      "searchType":"1",
-                      "headckid":"3b90473e084fa596",
-                      "dqs":city,
-                      "pubTime":"3",
-                      "compkind":'', #"010", # foreign companies
-                      "fromSearchBtn":"2",
-                      "ckid":"7bfc0aebc74f03a6",
-                      "degradeFlag":"0",
-                      "key":keyword,
-                      "siTag":"ZFDYQyfloRvvhTxLnVV_Qg~5uaOfDEtJdSczgdCly3x8A",
-                      "d_sfrom":"search_prime",
-                      "d_ckId":"37532abf95b160ab64a582ccf0d7efaf",
-                      "d_curPage":str(0 if each_page == 0 else each_page - 1),
-                      "d_pageSize":"40",
-                      "d_headId":"37532abf95b160ab64a582ccf0d7efaf",
-                      "curPage":str(each_page)}
+    def liepin(self, category, _input): 
+        if category == 'ersteURL':
+            urlsNheaders = []
+            city, keyword = _input
+            pages = self.crawl_size // 40
+            for each_page in range(pages):
+                params = {"init":"-1",
+                          "searchType":"1",
+                          "headckid":"3b90473e084fa596",
+                          "dqs":city,
+                          "pubTime":"3",
+                          "compkind":'', #"010", # foreign companies
+                          "fromSearchBtn":"2",
+                          "ckid":"7bfc0aebc74f03a6",
+                          "degradeFlag":"0",
+                          "key":keyword,
+                          "siTag":"ZFDYQyfloRvvhTxLnVV_Qg~5uaOfDEtJdSczgdCly3x8A",
+                          "d_sfrom":"search_prime",
+                          "d_ckId":"37532abf95b160ab64a582ccf0d7efaf",
+                          "d_curPage":str(0 if each_page == 0 else each_page - 1),
+                          "d_pageSize":"40",
+                          "d_headId":"37532abf95b160ab64a582ccf0d7efaf",
+                          "curPage":str(each_page)}
+                url_parse = 'https://www.liepin.com/zhaopin?' + urlencode(params)
+                headers = {'User-Agent':random.choice(self.user_agents)}
+                urlsNheaders.append({'source':'liepin', 'url':url_parse, 'headers':headers, 'keyword':keyword})
+            return urlsNheaders
+        elif category == 'zweiteURL':
+            url_parse = _input['url']
+            headers = _input['headers']
+            source = _input['source']
+            keyword = _input['keyword']
             try:
-                r = requests.get(url_parse, headers = headers, params = params, timeout = 7.5)
-                time.sleep(self.randomwait())
+                r = requests.get(url_parse, headers = headers, timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-                jobs = html.select('ul.sojob-list > li')
+                jobs = html.select(self.html_css[source])
                 for each_job in jobs:
                     url = each_job.select('div.job-info > h3 > a')[0]['href']
                     if url[:3] == '/a/':
                         url = 'https://www.liepin.com' + url
                     cache = {
                             'UID': str(each_job.select('div.job-info > h3 > a')[0]['href'].split('/')[-1][:-6]),
-                            'Source': 'liepin',
+                            'Source': source,
                             'Position': each_job.select('div.job-info > h3')[0].get_text().strip(),
                             'Release': each_job.select('div.job-info > p > time')[0]['title'][-6:], # '2019年05月09日'
                             'Company': each_job.select('p.company-name > a')[0].get_text().strip(),
@@ -268,57 +305,68 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of liepin as below.\n {}\n'.format(traceback.format_exc()))
-                continue
-
-    
-    def zhilian(self, keyword, city): 
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                func_name = sys._getframe().f_code.co_name,
+                print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+        else:
+            print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
         
-        pages = self.crawl_size // 90
-        url_parse = 'https://fe-api.zhaopin.com/c/i/sou'
         
-        for each_page in range(pages):
-            params = {
-                 'jl': city,
-                 'ct': '0', 
-                 'kw': keyword,
-                 'kt': '3',
-                 'sf': '0',
-                 'st': '0',
-                 'et': '2', 
-                 'el': '4', 
-                 'p': str(each_page+1)
+    def zhilian(self, category, _input): 
+        if category == 'ersteURL':
+            urlsNheaders = []
+            city, keyword = _input
+            pages = self.crawl_size // 90
+            for each_page in range(pages):
+                params = {
+                     'jl': city,
+                     'ct': '0', 
+                     'kw': keyword,
+                     'kt': '3',
+                     'sf': '0',
+                     'st': '0',
+                     'et': '2', 
+                     'el': '4', 
+                     'p': str(each_page+1)
                      }
-            url_start = 'https://sou.zhaopin.com?{}'.format(urlencode(params))
-            headers = {
-                'Accept': 'application/json, text/plain, */*',
-                'Origin': 'https://sou.zhaopin.com',
-                'Referer': url_start,
-                'User-Agent': random.choice(self.user_agents),
+                url_start = 'https://sou.zhaopin.com?{}'.format(urlencode(params))
+                
+                params_parse = {
+                    "pageSize":"90",
+                    "start": str(each_page*90),
+                    "cityId":city,
+                    "salary":"0,0",
+                    "workExperience":"-1",
+                    "education":"4", # bachelor degree = 4# master degree = 3
+                    "companyType":"-1", # foreign companies = 2
+                    "employmentType":"2", 
+                    "jobWelfareTag":"-1",
+                    "kw":keyword,
+                    "kt":"3",
+                    "_v":"0.71357600",
+                    "x-zp-page-request-id":"72d284de0afe4ce6a6a662736a5145e2-{}-{}".format(int(1000*time.time()), random.randint(0,1000000))
                     }
-            params_parse = {
-                "pageSize":"90",
-                "start": str(each_page*90),
-                "cityId":city,
-                "salary":"0,0",
-                "workExperience":"-1",
-                "education":"4", # bachelor degree = 4# master degree = 3
-                "companyType":"-1", # foreign companies = 2
-                "employmentType":"2", 
-                "jobWelfareTag":"-1",
-                "kw":keyword,
-                "kt":"3",
-                "_v":"0.71357600",
-                "x-zp-page-request-id":"72d284de0afe4ce6a6a662736a5145e2-{}-{}".format(int(1000*time.time()), random.randint(0,1000000))
-            }
+                url_parse = 'https://fe-api.zhaopin.com/c/i/sou?' + urlencode(params_parse)
+                headers = {
+                    'Accept': 'application/json, text/plain, */*',
+                    'Origin': 'https://sou.zhaopin.com',
+                    'Referer': url_start,
+                    'User-Agent': random.choice(self.user_agents),
+                    }
+                urlsNheaders.append({'source':'zhilian', 'url':url_parse, 'headers':headers, 'keyword':keyword})
+            return urlsNheaders
+        elif category == 'zweiteURL':
+            url_parse = _input['url']
+            headers = _input['headers']
+            source = _input['source']
+            keyword = _input['keyword']
             try:
-                r = requests.get(url_parse, headers = headers, params = params_parse, timeout = 7.5)
-                time.sleep(self.randomwait())
+                r = requests.get(url_parse, headers = headers, timeout = 10)
                 jobs = r.json()['data']['results']
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['number']),
-                            'Source': 'zhilian',
+                            'Source': source,
                             'Position': each_job['jobName'],
                             'Release': each_job['updateDate'].split(' ')[0][-5:],
                             'Company': each_job['company']['name'],
@@ -330,15 +378,18 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of zhilian as below.\n {}\n'.format(traceback.format_exc()))
-                continue
-    
-    
-    def lagou(self, keyword, city): 
-        pages = self.crawl_size // 15
-        url_base = 'https://www.lagou.com/jobs'
-        
-        params_start = {
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                func_name = sys._getframe().f_code.co_name,
+                print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+        else:
+            print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
+
+    def lagou(self, category, _input): 
+        if category == 'ersteURL':
+            urlsNheaders = []
+            city, keyword = _input
+            pages = self.crawl_size // 15
+            params_start = {
                 'px':'new', # 排序
                 'gx':'全职',
                 'isSchoolJob':'1',
@@ -348,15 +399,13 @@ class jobSpider():
                 'fromSearch':'True',
                 'suginput':'',
                 }
-        params_parse = {
+            url_start = 'https://www.lagou.com/jobs/list_{}?{}'.format(quote(keyword),urlencode(params_start))
+            params_parse = {
                 'city':city,
                 'needAddtionalResult':'false',
                 }
-        
-        url_start = '{}/list_{}?{}'.format(url_base, quote(keyword),urlencode(params_start))
-        url_parse = '{}/positionAjax.json?{}'.format(url_base, urlencode(params_parse))
-        
-        headers_parse = {
+            url_parse = 'https://www.lagou.com/jobs/positionAjax.json?' + urlencode(params_parse)
+            headers_parse = {
                 'Accept': 'application/json, text/javascript, */*; q=0.01',
                 'Referer': url_start,
                 'User-Agent': random.choice(self.user_agents),
@@ -365,24 +414,38 @@ class jobSpider():
                 'X-Anit-Forge-Token':'None',	
                 'X-Requested-With':'XMLHttpRequest',
                 }
-        
-        s = requests.Session()
-        s.get(url_start, headers = headers_parse, timeout = 7.5)
-        for each_page in range(pages):
-            first_page = 'true' if each_page == 0 else 'false'
-            data = {
-                    'first': first_page,
-                    'pn': str(each_page+1),
-                    'kd': keyword,
-                    }
+            
+            for each_page in range(pages):
+                data = {
+                        'first': 'true' if each_page == 0 else 'false',
+                        'pn': str(each_page+1),
+                        'kd': keyword,
+                        }
+                s = requests.Session()
+                try:
+                    s.get(url_start, headers = headers_parse, timeout = 10)
+                    urlsNheaders.append({'source':'lagou', 'url':url_parse, 'headers':headers_parse, 'cookies':s.cookies, 'data':data, 'keyword':keyword})
+                except:
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    func_name = sys._getframe().f_code.co_name,
+                    print('{}: Session bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+                
+            return urlsNheaders
+        elif category == 'zweiteURL':
+            url_parse = _input['url']
+            headers = _input['headers']
+            source = _input['source']
+            cookies = _input['cookies']
+            data = _input['data']
+            keyword = _input['keyword']
+            
             try:
-                r = s.post(url_parse, data=data, headers=headers_parse, cookies=s.cookies, timeout = 7.5)
-                time.sleep(self.randomwait())
+                r = requests.post(url_parse, data=data, headers=headers, cookies=cookies, timeout = 10)
                 jobs = r.json()['content']['positionResult']['result']
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['positionId']),
-                            'Source': 'lagou',
+                            'Source': source,
                             'Position': each_job['positionName'],
                             'Release': each_job['createTime'].split(' ')[0][-5:],
                             'Company': each_job['companyFullName'],
@@ -393,78 +456,62 @@ class jobSpider():
                             'Comment': 'None',
                             } 
                     self.job_list.append(cache)
-            except Exception as e:
-                print(traceback.format_exc())
-                continue   
-
-
-    def bosszhipin(self, keyword, city):
+                    
+            except:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                func_name = sys._getframe().f_code.co_name,
+                print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+        else:
+            print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
         
-        pages = self.crawl_size // 30
-        url_parse = 'https://www.zhipin.com/job_detail'
-        release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
-        timestamp = int(time.time()) - 1
-        headers_start = {
-                'User-Agent':random.choice(self.user_agents),
-                'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Encoding':'gzip, deflate, br',
-                'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
-                'Caceh-Control':'max-age=0',
-                'Connection':'keep-alive',
-                'Cookie':'lastCity=101010100; __c={}; __g=-;\
-                        __l=l=%2Fwww.zhipin.com%2F&r=https%3A%2F%2Fwww.google.com%2F;\
-                        __a=83361331.{}..{}.14.1.14.14; \
-                        Hm_lvt_194df3105ad7148dcf2b98a91b5e727a={}; \
-                        Hm_lpvt_194df3105ad7148dcf2b98a91b5e727a={}; \
-                        _uab_collina=156301810358065089864524'.format(timestamp, timestamp, timestamp, timestamp, timestamp + 789),
-                'Host':'www.zhipin.com',
-                'Referer': 'https://www.zhipin.com/',
-                'TE': 'Trailers',
-                'X-Requested-With':'XMLHttpRequest'
-                }
-        
-        s = requests.Session()
-        s.get('https://www.zhipin.com/', headers = headers_start, timeout = 7.5)
-        
-        for each_page in range(pages):
-            params = {
+    def bosszhipin(self, category, _input):
+        if category == 'ersteURL':
+            urlsNheaders = []
+            city, keyword = _input
+            pages = self.crawl_size // 30
+            
+            s = requests.Session()
+            for each_page in range(pages):
+                params = {
                 'query': keyword,
                 'city': city,
                 'page': str(each_page),
-#                'degree':'204', # master degree
-#                'experience':'103', # working experience
+#                    'degree':'204', # master degree
+#                    'experience':'103', # working experience
                 }
-            headers_parse = {
-                'User-Agent':random.choice(self.user_agents),
+                headers_parse = {
+                'User-Agent':"Mozilla/5.0 (X11; U; Linux; en-US) AppleWebKit/527+ (KHTML, like Gecko, Safari/419.3) Arora/0.6",
                 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Encoding':'gzip, deflate, br',
-                'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
-                'Caceh-Control':'max-age=0',
-                'Connection':'keep-alive',
-                'Cookie':'lastCity=101010100; __c={}; __g=-;\
-                        __l=l=%2Fwww.zhipin.com%2F&r=https%3A%2F%2Fwww.google.com%2F;\
-                        __a=83361331.{}..{}.14.1.14.14; \
-                        Hm_lvt_194df3105ad7148dcf2b98a91b5e727a={}; \
-                        Hm_lpvt_194df3105ad7148dcf2b98a91b5e727a={}; \
-                        _uab_collina=156301810358065089864524'.format(timestamp, timestamp, timestamp, timestamp, timestamp + 789),
                 'Host':'www.zhipin.com',
-                'Referer': url_parse + '?' + urlencode(params),
-                'TE': 'Trailers',
+                'Referer': 'https://www.zhipin.com/job_detail?' + urlencode(params),
                 'X-Requested-With':'XMLHttpRequest'
                 }
+                url_parse = 'https://www.zhipin.com/job_detail?' + urlencode(params)
+                try:
+                    s.get(url_parse, headers = headers_parse, timeout = 10)
+                    urlsNheaders.append({'source':'bosszhipin', 'url':url_parse, 'headers':headers_parse, 'cookies':s.cookies, 'keyword':keyword})
+                except:
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    func_name = sys._getframe().f_code.co_name,
+                    print('{}: Session bug with {} / {}'.format(func_name, exc_value, exc_type))
+            
+            return urlsNheaders
+        
+        elif category == 'zweiteURL':
+            url_parse = _input['url']
+            headers = _input['headers']
+            source = _input['source']
+            cookies = _input['cookies']
+            keyword = _input['keyword']
+            release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             try:
-                r = requests.get(url_parse, headers = headers_parse, params = params, cookies = s.cookies, timeout = 7.5)
-                time.sleep(self.randomwait())
-                if '异常' in r.text:
-                    # terminate? must send an alert
-                    print('You got caught by bosszhipin \n')
-                    continue
+                r = requests.get(url_parse, headers = headers, cookies = cookies, timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-                jobs = html.select('#main > div > div.job-list > ul > li')
+                jobs  = html.select(self.html_css[source])
                 for each_job in jobs:
                     cache = {
                             'UID': each_job.select('h3.name > a')[0]['data-jid'],
-                            'Source': 'bosszhipin',
+                            'Source': source,
                             'Position': each_job.select('div.job-title')[0].get_text().strip(),
                             'Release': release,
                             'Company': each_job.select('div.company-text > h3.name > a')[0].get_text().strip(),
@@ -476,63 +523,75 @@ class jobSpider():
                             }
                     self.job_list.append(cache)
             except:
-                print('Spider error of bosszhipin as below.\n {}\n'.format(traceback.format_exc()))
-                continue   
-
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                func_name = sys._getframe().f_code.co_name,
+                print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+        else:
+            print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
+        
     
-    def yingjie(self, keyword, city):
-        pass
-#from urllib.parse import urlparse, parse_qsl, 
-#o = urlparse(url)
-#q = dict(parse_qsl(o.query)) # or parse_qs(o.query)
-#r.encoding('gbk')
-#response = requests.request("GET", url, headers=headers, params=querystring)
-
+    def randomwait(self):
+        return random.randint(3,5) + random.uniform(-1,1)
+        
+    def spiderCheck(self):
+        if len(self.job_list) != 0:
+            for each_source in list(self.description_css.keys()):
+                for each_job in self.job_list:
+                    if each_job['Source'] == each_source:
+                        print('{}: {} is ok.\n'.format(sys._getframe().f_code.co_name, each_source))
+                        break
+            print('{}: There are {} captured job before filtering.\n'.format(sys._getframe().f_code.co_name, len(self.job_list)))
+        else:
+            print('{}: Warning: THERE IS NO RECORD IN self.job_list.\n'.format(sys._getframe().f_code.co_name))
+            raise SystemExit
+            
+    def proxies(self):
+        proxies = None
+        try:
+            p = requests.get('http://www.ettzzz.me/proxy/get', timeout = 2)
+            if p.text[:4] == 'http':
+                proxies = {'http':p.text, 'https':p.text}
+        except:
+            print('proxies: Fail to ask for a proxy. It\'s either timeout or no proxies available')
+        return proxies
+            
 if __name__ == "__main__":
     job_cfgs = {
-            'jobs':
-                {
-                'python后端': {'stop':['大专', '专科', '抗压','adoop',], 'go':['应届','海外','硕士','研究生','quirement','raduate','JavaScript']},
-                'python爬虫': {'stop':['大专', '专科', '抗压','crapy','ava'], 'go':['应届','海外','硕士','研究生','quirement','raduate']},
-                'python数据分析': {'stop':['大专','adoop','抗压','数学'], 'go':['应届','海外','硕士','quirement','raduate']},
+            'global':{
+                    'crawls_per_day':3,
+                    'crawl_size':100,
+                    'db_name': 'Arbeitsuchen.db',
+                    'jtable_name':'Arbeiten',
+                    'ptable_name':'Bad',
+                    'ctable_name':'Staedte',
+                    'cities':['beijing'],
+                    },
+            'jobs':{
+#                'python后端': {'stop':['++','adoop',], 'go':['应届','quirement','raduate']},
+                'python': {'stop':[ '++','crapy','ava'], 'go':['应届','quirement','raduate']},
+                '智能交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
+#                '交通工程': {'stop':['抗压','轨道','CAD','Auto'], 'go':['应届','海外',]},
+#                '智慧交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
                 },
-            'filters':
-                {
-                'company_stops':['某','一线','知名','百度','aidu'],
-                'position_stops':['实习','销售','经理','高级','资深','文案','ava','++',],
+            'filters':{
+                'company_stops':['轨道','百度','aidu'],
+                'position_stops':['轨道','汽车','实习','售','经理','高级','资深','总监','ava','++',],
                 },
-            'cities':
-                {
-                'shenzhen':{
-                            'linkedin':'cnERSATZ3A8910',
-                            'indeed':'深圳',
-                            'liepin':'050090',
-                            'zhilian':'765',
-                            'lagou':'深圳',
-                            'bosszhipin':'101280600'
-                        }
+            'cities':{
+                'beijing':{
+                            'linkedin':'cnERSATZ3A8911',
+                            'indeed':'北京',
+                            'liepin':'010',
+                            'zhilian':'530',
+                            'lagou':'北京',
+                            'bosszhipin':'101010100'
+                            },
                 },
-
             }
-                    
-    bot = jobSpider(job_cfgs)
-    bot.liepin('python后端', '深圳')
-    filtered = bot.scheduler('python后端')
-    ori = bot.job_list
-    print(len(ori))
-    print(len(filtered))
-#    
-#    tmp = []
-#    counter = 0
-#    for i in ori:
-#        if i['Source'] == 'bosszhipin':
-#            tmp.append(i)
-#
-#    headers = {'User-Agent':"Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) Presto/2.9.168 Version/11.52"}
-#    for each_job in tmp:        
-#        r = requests.get(each_job['URL'], headers = headers, timeout = 7.5)
-#        time.sleep(random.randint(3,5))
-#        html = BeautifulSoup(r.text, 'html.parser')
-#        d = html.select('div.detail-content > div.job-sec > div.text')[0]
-#        
-#    each_job = tmp[0]
+
+    test = jobSpider(job_cfgs)
+    filtered = test.scheduler(False)
+    ori = test.job_list
+    
+            
+        
