@@ -22,17 +22,7 @@ class jobSpider():
         self.crawl_size = self.cfgs['global']['crawl_size']
         self.job_list = []
         self.urls = []
-        self.user_agents = [
-            "Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)",
-            "Mozilla/5.0 (X11; U; Linux; en-US) AppleWebKit/527+ (KHTML, like Gecko, Safari/419.3) Arora/0.6",
-            "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.2pre) Gecko/20070215 K-Ninja/2.1.1",
-            "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9) Gecko/20080705 Firefox/3.0 Kapiko/3.0",
-            "Mozilla/5.0 (X11; Linux i686; U;) Gecko/20070322 Kazehakase/0.4.5",
-            "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.8) Gecko Fedora/1.9.0.8-1.fc10 Kazehakase/0.5.6",
-            "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.20 (KHTML, like Gecko) Chrome/19.0.1036.7 Safari/535.20",
-            "Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; fr) Presto/2.9.168 Version/11.52",
-            ]
+        self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0'
         self.description_css = {
                 'linkedin':'section.description',
                 'indeed':'#jobDescriptionText',
@@ -50,7 +40,7 @@ class jobSpider():
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-    def scheduler(self, fast = True):
+    def scheduler(self, fast = False):
         comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
 #        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['bosszhipin']))
         for each_comp in comps:
@@ -58,12 +48,12 @@ class jobSpider():
             
         self.urls = random.sample(self.urls,len(self.urls))
         previous_source = self.urls[0]['source']
-        for each_dict in self.urls:
-            if previous_source == each_dict['source']:
-                self.randomwait()
-            else:
-                previous_source == each_dict['source']
-            self.URLParser(each_dict)
+        for each_url in self.urls:
+#            if previous_source == each_url['source']:
+#                self.randomwait()
+#            else:
+#                previous_source = each_url['source']
+            self.URLParser(each_url)
         
         self.spiderCheck()
         
@@ -115,7 +105,7 @@ class jobSpider():
                 headers = each_url['headers']
                 break
             else:
-                headers = {'User-Agent':random.choice(self.user_agents)}
+                headers = {'User-Agent':self.user_agent}
 
         try:
             if each_job['Source'] == 'lagou':
@@ -160,7 +150,7 @@ class jobSpider():
                     'sortBy': 'DD',
                     }
                 url_parse = 'https://www.linkedin.com/jobs/search' + '?' + urlencode(params)
-                headers = {'User-Agent':random.choice(self.user_agents)}
+                headers = {'User-Agent':self.user_agent}
                 urlsNheaders.append({'source':'linkedin', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
         elif category == 'zweiteURL':
@@ -215,7 +205,7 @@ class jobSpider():
                         'start': each_page * 50
                         }
                 url_parse = 'https://cn.indeed.com/%E5%B7%A5%E4%BD%9C' + '?' + urlencode(params)
-                headers = {'User-Agent':random.choice(self.user_agents)}
+                headers = {'User-Agent':self.user_agent}
                 urlsNheaders.append({'source':'indeed', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
         elif category == 'zweiteURL':
@@ -275,7 +265,7 @@ class jobSpider():
                           "d_headId":"37532abf95b160ab64a582ccf0d7efaf",
                           "curPage":str(each_page)}
                 url_parse = 'https://www.liepin.com/zhaopin?' + urlencode(params)
-                headers = {'User-Agent':random.choice(self.user_agents)}
+                headers = {'User-Agent':self.user_agent}
                 urlsNheaders.append({'source':'liepin', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
         elif category == 'zweiteURL':
@@ -353,7 +343,7 @@ class jobSpider():
                     'Accept': 'application/json, text/plain, */*',
                     'Origin': 'https://sou.zhaopin.com',
                     'Referer': url_start,
-                    'User-Agent': random.choice(self.user_agents),
+                    'User-Agent': self.user_agent,
                     }
                 urlsNheaders.append({'source':'zhilian', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
@@ -412,7 +402,7 @@ class jobSpider():
             headers_parse = {
                 'Accept': 'application/json, text/javascript, */*; q=0.01',
                 'Referer': url_start,
-                'User-Agent': random.choice(self.user_agents),
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0',
                 'Host': 'www.lagou.com',
                 'X-Anit-Forge-Code':'0',	
                 'X-Anit-Forge-Token':'None',	
@@ -471,6 +461,7 @@ class jobSpider():
                     raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
+                print(r.json())
         else:
             print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
         
@@ -490,7 +481,7 @@ class jobSpider():
 #                    'experience':'103', # working experience
                 }
                 headers_parse = {
-                'User-Agent':"Mozilla/5.0 (X11; U; Linux; en-US) AppleWebKit/527+ (KHTML, like Gecko, Safari/419.3) Arora/0.6",
+                'User-Agent':self.user_agent,
                 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Host':'www.zhipin.com',
                 'Referer': 'https://www.zhipin.com/',
@@ -498,7 +489,7 @@ class jobSpider():
                 }
                 url_parse = 'https://www.zhipin.com/job_detail?' + urlencode(params)
                 try:
-                    s.get(url_parse, headers = headers_parse, timeout = 10)
+                    s.get(url_parse, headers = headers_parse, timeout = 10, proxies = self.proxies())
                     urlsNheaders.append({'source':'bosszhipin', 'url':url_parse, 'headers':headers_parse, 'cookies':s.cookies, 'keyword':keyword})
                 except:
                     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -517,7 +508,7 @@ class jobSpider():
             keyword = _input['keyword']
             release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             try:
-                r = requests.get(url_parse, headers = headers, cookies = cookies, timeout = 10)
+                r = requests.get(url_parse, headers = headers, cookies = cookies, proxies = self.proxies(), timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs  = html.select(self.html_css[source])
                 for each_job in jobs:
@@ -545,7 +536,8 @@ class jobSpider():
         
     
     def randomwait(self):
-        return random.randint(5,7) + random.uniform(-1,1)
+        sec = round(random.randint(3,5) + random.uniform(-1,1), 2)
+        time.sleep(sec)
         
     def spiderCheck(self):
         if len(self.job_list) != 0:
@@ -561,12 +553,20 @@ class jobSpider():
             
     def proxies(self):
         proxies = None
-        try:
-            p = requests.get('http://www.ettzzz.me/proxy/get', timeout = 2)
+        counter = 0
+        while counter < 5:
+            p = requests.get('http://134.209.199.241/proxy/get', timeout = 3)
             if p.text[:4] == 'http':
-                proxies = {'http':p.text, 'https':p.text}
-        except:
-            print('proxies: Fail to ask for a proxy. It\'s either timeout or no proxies available')
+                proxies = {'http':p.text, 'https':p.text} 
+                try: 
+                    r = requests.get('https://www.baidu.com', headers = {'User-Agent':self.user_agent}, timeout = 5)
+                    if r.status_code == 200:
+                        break
+                    else:
+                        continue
+                except:
+                    continue
+            counter += 1
         return proxies
     
             
@@ -603,9 +603,9 @@ if __name__ == "__main__":
                             },
                 },
             }
-
     test = jobSpider(job_cfgs)
-    filtered = test.scheduler(False)
+    for each_keyword in list(test.cfgs['jobs'].keys()):
+        filtered = test.scheduler()
     ori = test.job_list
     urls = test.urls
     print(len(ori))
