@@ -14,11 +14,11 @@ class jobDataBase():
     def __init__(self):
         self.database = 'jobs.db'
         self.pool_table = 'pool'
-        self.job_tables = []
         
         self.conn = sqlite3.connect(self.database)
         self.c = self.conn.cursor()
         self.initiate()
+        
 #        self.c.execute("PRAGMA table_info({})".format(table_name))
 #        self.n_columns = len(self.c.fetchall())
         self.n_columns = 10
@@ -31,24 +31,23 @@ class jobDataBase():
 #            self.clean()
             pass
         
-    def newdb(self, table_name):
+    def addTable(self, table_name):
         self.c.execute('CREATE TABLE {}(\
-                            UID TEXT PRIMARY KEY NOT NULL,\
-                            Source CHAR(20) NOT NULL,\
-                            Position TEXT NOT NULL,\
-                            Release CHAR(20) NOT NULL,\
-                            Company TEXT NOT NULL,\
-                            Location TEXT,\
-                            Payment CHAR(20),\
-                            URL TEXT NOT NULL,\
-                            Keyword TEXT NOT NULL,\
-                            Comment TEXT\
-                            );'.format(table_name))
+                        UID TEXT PRIMARY KEY NOT NULL,\
+                        Source CHAR(20) NOT NULL,\
+                        Position TEXT NOT NULL,\
+                        Release CHAR(20) NOT NULL,\
+                        Company TEXT NOT NULL,\
+                        Location TEXT,\
+                        Payment CHAR(20),\
+                        URL TEXT NOT NULL,\
+                        Keyword TEXT NOT NULL,\
+                        Comment TEXT\
+                        );'.format(table_name))
         self.conn.commit()
-        self.job_tabls.append(table_name)
     
-    def alldb(self):
-        self.c.execute("SELECT name FROM sqlite_master WHERETYPE='table' ORDER BY name")
+    def allTables(self):
+        self.c.execute("SELECT name FROM sqlite_master WHERE TYPE='table' ORDER BY name")
         return self.c.fetchall()
 
     def insert(self, table_name, captured_jobs):
@@ -57,11 +56,10 @@ class jobDataBase():
         for each_job in captured_jobs:
             try:
                 self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
-                self.c.execute(
-                    "INSERT INTO {} ({}) VALUES {};".format(table_name, homo.format(*each_job), tuple(each_job.values())))
+                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, homo.format(*each_job), tuple(each_job.values())))
+                self.conn.commit()
             except:
                 continue
-        self.conn.commit()
     
     def fetch(self, table_name):
         self.c.execute('SELECT * FROM {};'.format(table_name))
@@ -72,15 +70,13 @@ class jobDataBase():
         self.conn.commit()
         
     def reset(self):
-        for each_table in self.job_tables:
-            self.c.execute("DROP TABLE {};".format(each_table))
-        self.c.execute("DROP TABLE {};".format(self.pool_table))
+        for each_table in self.allTables():
+            self.c.execute("DROP TABLE {};".format(each_table[0]))
         self.conn.commit()
-        self.job_tables = []
         
     def pool_check(self):
         self.c.execute("SELECT count(*) FROM {};".format(self.pool_table))
         return True if self.c.fetchall()[0][0] > 6000 else False
     
 if __name__ == '__main__':
-    test_db = jobDataBase()
+    test = jobDataBase()

@@ -38,7 +38,7 @@ class jobSpider():
                 'indeed':'#jobDescriptionText',
                 'zhilian':'div.describtion > div.describtion__detail-content',
                 'liepin':'div.content.content-word',
-                'lagou':'dl#job_detail.job_detail dd.job_bt',
+                'lagou':'dl#job_detail.job_detail > dd.job_bt',
                 'bosszhipin':'div.detail-content > div.job-sec > div.text',
                 }
         self.html_css = {
@@ -51,7 +51,8 @@ class jobSpider():
                 }
         
     def scheduler(self, fast = True):
-        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
+#        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
+        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['lagou']))
         for each_comp in comps:
             self.urls.extend(self.URLBuilder(each_comp))
             
@@ -112,26 +113,27 @@ class jobSpider():
         for i, each_url in enumerate(self.urls):
             if each_url['source'] == each_job['Source']:
                 headers = each_url['headers']
+                cookies = each_url['cookies']
                 break
             else:
                 headers = {'User-Agent':random.choice(self.user_agents)}
 
         try:
             if each_job['Source'] == 'lagou':
-                params_start = {
-                    'px':'new', # 排序
-                    'gx':'全职',
-                    'isSchoolJob':'1',
-                    'xl':'本科,硕士',
-                    'city':'',
-                    'labelWords':'',
-                    'fromSearch':'True',
-                    'suginput':'',
-                    }
-                url_start = 'https://www.lagou.com/jobs/list_{}?{}'.format(quote(each_job['Keyword']),urlencode(params_start))
-                s = requests.Session()
-                s.get(url_start, headers = headers)
-                r = requests.get(each_job['URL'], headers = headers, cookies = s.cookies, timeout = 10)
+#                params_start = {
+#                    'px':'new', # 排序
+#                    'gx':'全职',
+#                    'isSchoolJob':'1',
+#                    'xl':'本科,硕士',
+#                    'city':'',
+#                    'labelWords':'',
+#                    'fromSearch':'True',
+#                    'suginput':'',
+#                    }
+#                url_start = 'https://www.lagou.com/jobs/list_{}?{}'.format(quote(each_job['Keyword']),urlencode(params_start))
+#                s = requests.Session()
+#                s.get(url_start, headers = headers)
+                r = requests.get(each_job['URL'], headers = headers, cookies = cookies, timeout = 10)
             else:
                 r = requests.get(each_job['URL'], headers = headers, timeout = 10)
             
@@ -143,9 +145,13 @@ class jobSpider():
             if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['go']):
                 censor_key = True
         except:
+            
             exc_type, exc_value, exc_tb = sys.exc_info()
-            func_name = sys._getframe().f_code.co_name,
-            print('{}: {} Requests/CSS bug with {} / {} at {}.\n'.format(func_name, each_job['Source'], exc_value, exc_type, each_job['URL']))
+            if 'KeyboardInterrupt' in str(exc_type):
+                    raise KeyboardInterrupt
+            traceback.print_exc()
+#            func_name = sys._getframe().f_code.co_name,
+#            print('{}: {} Requests/CSS bug with {} / {} at {}.\n'.format(func_name, each_job['Source'], exc_value, exc_type, each_job['URL']))
         return censor_key
     
     def linkedin(self, category, _input):
@@ -193,6 +199,8 @@ class jobSpider():
                     self.job_list.append(cache)
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
+                if 'KeyboardInterrupt' in str(exc_type):
+                    raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
         else:
@@ -246,6 +254,8 @@ class jobSpider():
                     self.job_list.append(cache)
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
+                if 'KeyboardInterrupt' in str(exc_type):
+                    raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
         else:
@@ -306,6 +316,8 @@ class jobSpider():
                     self.job_list.append(cache)
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
+                if 'KeyboardInterrupt' in str(exc_type):
+                    raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
         else:
@@ -379,6 +391,8 @@ class jobSpider():
                     self.job_list.append(cache)
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
+                if 'KeyboardInterrupt' in str(exc_type):
+                    raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
         else:
@@ -427,6 +441,8 @@ class jobSpider():
                     urlsNheaders.append({'source':'lagou', 'url':url_parse, 'headers':headers_parse, 'cookies':s.cookies, 'data':data, 'keyword':keyword})
                 except:
                     exc_type, exc_value, exc_tb = sys.exc_info()
+                    if 'KeyboardInterrupt' in str(exc_type):
+                        raise KeyboardInterrupt
                     func_name = sys._getframe().f_code.co_name,
                     print('{}: Session bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
                 
@@ -459,6 +475,8 @@ class jobSpider():
                     
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
+                if 'KeyboardInterrupt' in str(exc_type):
+                    raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
         else:
@@ -492,6 +510,8 @@ class jobSpider():
                     urlsNheaders.append({'source':'bosszhipin', 'url':url_parse, 'headers':headers_parse, 'cookies':s.cookies, 'keyword':keyword})
                 except:
                     exc_type, exc_value, exc_tb = sys.exc_info()
+                    if 'KeyboardInterrupt' in str(exc_type):
+                        raise KeyboardInterrupt
                     func_name = sys._getframe().f_code.co_name,
                     print('{}: Session bug with {} / {}'.format(func_name, exc_value, exc_type))
             
@@ -524,6 +544,8 @@ class jobSpider():
                     self.job_list.append(cache)
             except:
                 exc_type, exc_value, exc_tb = sys.exc_info()
+                if 'KeyboardInterrupt' in str(exc_type):
+                    raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
         else:
@@ -554,6 +576,7 @@ class jobSpider():
         except:
             print('proxies: Fail to ask for a proxy. It\'s either timeout or no proxies available')
         return proxies
+    
             
 if __name__ == "__main__":
     job_cfgs = {
@@ -592,6 +615,14 @@ if __name__ == "__main__":
     test = jobSpider(job_cfgs)
     filtered = test.scheduler(False)
     ori = test.job_list
+    urls = test.urls
+    print(len(ori), len(filtered))    
     
+    for i, each_url in enumerate(test.urls):
+        if each_url['source'] == 'lagou':
+            headers = each_url['headers']
+            cookies = each_url['cookies']
+            break
+    r = requests.get('https://www.lagou.com/jobs/5725220.html', headers = headers, cookies = cookies, timeout = 10)
             
         

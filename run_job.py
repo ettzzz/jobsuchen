@@ -84,17 +84,19 @@ def main(cfgs):
         counter = 0
         while counter < crawls_per_day: 
             t_start = time.time()
-            table_name = time.strftime('%m%d%H%M',time.localtime(time.time()))
+            table_name = 'table' + time.strftime('%m%d%H%M',time.localtime(time.time()))
+            db.addTable(table_name)
             for each_keyword in list(cfgs['jobs'].keys()):
                 each_job_list = agent.scheduler(each_keyword)
                 db.insert(table_name, each_job_list)
             
-            messager.send2me(db.fetch(table_name))
+            print('pretend to be sent')
+#            messager.send2me(db.fetch(table_name))
             
             t_crawl = int(time.time() - t_start)
             t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
             t_sleep = t_sleep if t_sleep > 0 else 0
-            time.sleep(t_sleep)
+#            time.sleep(t_sleep)
             time.sleep(3) # for test purpose
             counter += 1
             
