@@ -41,18 +41,13 @@ class jobSpider():
                 }
         
     def scheduler(self, fast = False):
-        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
-#        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['bosszhipin']))
+#        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
+        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['lagou']))
         for each_comp in comps:
             self.urls.extend(self.URLBuilder(each_comp))
             
         self.urls = random.sample(self.urls,len(self.urls))
-        previous_source = self.urls[0]['source']
         for each_url in self.urls:
-#            if previous_source == each_url['source']:
-#                self.randomwait()
-#            else:
-#                previous_source = each_url['source']
             self.URLParser(each_url)
         
         self.spiderCheck()
@@ -390,10 +385,16 @@ class jobSpider():
                 'xl':'本科,硕士',
                 'city':city,
                 'labelWords':'',
-                'fromSearch':'True',
+                'fromSearch':'true',
                 'suginput':'',
                 }
             url_start = 'https://www.lagou.com/jobs/list_{}?{}'.format(quote(keyword),urlencode(params_start))
+            headers_start = {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+                'Referer': 'https://www.lagou.com/jobs/list_python?px=default&city=%E5%85%A8%E5%9B%BD',
+                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
+                'Host': 'www.lagou.com'
+                }
             params_parse = {
                 'city':city,
                 'needAddtionalResult':'false',
@@ -417,7 +418,7 @@ class jobSpider():
                         }
                 s = requests.Session()
                 try:
-                    s.get(url_start, headers = headers_parse, timeout = 10)
+                    s.get(url_start, headers = headers_start, timeout = 10)
                     urlsNheaders.append({'source':'lagou', 'url':url_parse, 'url_start':url_start, \
                                          'headers':headers_parse, 'cookies':s.cookies, 'data':data, 'keyword':keyword})
                 except:
@@ -439,6 +440,8 @@ class jobSpider():
             
             try:
                 r = requests.post(url_parse, data=data, headers=headers, cookies=cookies, timeout = 10)
+                if '频繁' in r.text:
+                    print(r.json())
                 jobs = r.json()['content']['positionResult']['result']
                 for each_job in jobs:
                     cache = {
@@ -461,7 +464,6 @@ class jobSpider():
                     raise KeyboardInterrupt
                 func_name = sys._getframe().f_code.co_name,
                 print('{}: Requests/CSS bug with {} / {}.\n'.format(func_name, exc_value, exc_type))
-                print(r.json())
         else:
             print('{}: False category name.\n'.format(sys._getframe().f_code.co_name))
         
