@@ -91,12 +91,12 @@ def main(cfgs):
                 db.insert(table_name, each_job_list)
             
             print('Sending messages to bot...')
-#            messager.send2me(db.fetch(table_name))
+            messager.send2me(db.fetch(table_name))
             
-#            t_crawl = int(time.time() - t_start)
-#            t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
-#            t_sleep = t_sleep if t_sleep > 0 else 0
-#            time.sleep(t_sleep)
+            t_crawl = int(time.time() - t_start)
+            t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
+            t_sleep = t_sleep if t_sleep > 0 else 0
+            time.sleep(t_sleep)
             time.sleep(3) # for test purpose
             counter += 1
             
