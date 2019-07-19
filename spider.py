@@ -400,15 +400,15 @@ class jobSpider():
                 'needAddtionalResult':'false',
                 }
             url_parse = 'https://www.lagou.com/jobs/positionAjax.json?' + urlencode(params_parse)
-            headers_parse = {
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Referer': url_start,
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0',
-                'Host': 'www.lagou.com',
-                'X-Anit-Forge-Code':'0',	
-                'X-Anit-Forge-Token':'None',	
-                'X-Requested-With':'XMLHttpRequest',
-                }
+#            headers_parse = {
+#                'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                'Referer': url_start,
+#                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0',
+#                'Host': 'www.lagou.com',
+#                'X-Anit-Forge-Code':'0',	
+#                'X-Anit-Forge-Token':'None',	
+#                'X-Requested-With':'XMLHttpRequest',
+#                }
             
             for each_page in range(pages):
                 data = {
@@ -420,7 +420,7 @@ class jobSpider():
                 try:
                     s.get(url_start, headers = headers_start, timeout = 10)
                     urlsNheaders.append({'source':'lagou', 'url':url_parse, 'url_start':url_start, \
-                                         'headers':headers_parse, 'cookies':s.cookies, 'data':data, 'keyword':keyword})
+                                         'headers':headers_start, 'cookies':s.cookies, 'data':data, 'keyword':keyword})
                 except:
                     exc_type, exc_value, exc_tb = sys.exc_info()
                     if 'KeyboardInterrupt' in str(exc_type):
@@ -539,6 +539,7 @@ class jobSpider():
     
     def randomwait(self):
         sec = round(random.randint(3,5) + random.uniform(-1,1), 2)
+        print('I\'m waiting for {} seconds'.format(sec))
         time.sleep(sec)
         
     def spiderCheck(self):
@@ -581,20 +582,28 @@ if __name__ == "__main__":
                     'jtable_name':'Arbeiten',
                     'ptable_name':'Bad',
                     'ctable_name':'Staedte',
-                    'cities':['beijing'],
+                    'cities':['beijing','shanghai','shenzhen'],
                     },
             'jobs':{
-#                'python后端': {'stop':['++','adoop',], 'go':['应届','quirement','raduate']},
-                'python': {'stop':[ '++','crapy','ava'], 'go':['应届','quirement','raduate']},
+                'python后端': {'stop':['++','adoop','3年以上'], 'go':['应届','quirement','raduate']},
+                'python': {'stop':[ '++','crapy','ava','3年以上'], 'go':['应届','quirement','raduate']},
                 '智能交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
-#                '交通工程': {'stop':['抗压','轨道','CAD','Auto'], 'go':['应届','海外',]},
-#                '智慧交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
+                '交通工程': {'stop':['抗压','轨道','CAD','Auto'], 'go':['应届','海外',]},
+                '智慧交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
                 },
             'filters':{
                 'company_stops':['轨道','百度','aidu'],
                 'position_stops':['轨道','汽车','实习','售','经理','高级','资深','总监','ava','++',],
                 },
             'cities':{
+                'shanghai':{
+                            'linkedin':'cnERSATZ3A8909',
+                            'indeed':'上海',
+                            'liepin':'020',
+                            'zhilian':'538',
+                            'lagou':'上海',
+                            'bosszhipin':'101020100'
+                            },
                 'beijing':{
                             'linkedin':'cnERSATZ3A8911',
                             'indeed':'北京',
@@ -603,6 +612,14 @@ if __name__ == "__main__":
                             'lagou':'北京',
                             'bosszhipin':'101010100'
                             },
+                'shenzhen':{
+                            'linkedin':'cnERSATZ3A8910',
+                            'indeed':'深圳',
+                            'liepin':'050090',
+                            'zhilian':'765',
+                            'lagou':'深圳',
+                            'bosszhipin':'101280600'
+                        },
                 },
             }
     test = jobSpider(job_cfgs)
