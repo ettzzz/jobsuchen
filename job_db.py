@@ -18,7 +18,6 @@ class jobDataBase():
         self.conn = sqlite3.connect(self.database)
         self.c = self.conn.cursor()
         self.initiate()
-        
 #        self.c.execute("PRAGMA table_info({})".format(table_name))
 #        self.n_columns = len(self.c.fetchall())
         self.n_columns = 10
@@ -27,8 +26,7 @@ class jobDataBase():
         try:
             self.c.execute('CREATE TABLE {}(UID TEXT PRIMARY KEY NOT NULL);'.format(self.pool_table))
             self.conn.commit()
-        except: # gebraucht or unexpected exit
-#            self.clean()
+        except:
             pass
         
     def addTable(self, table_name):
@@ -51,12 +49,11 @@ class jobDataBase():
         return self.c.fetchall()
 
     def insert(self, table_name, captured_jobs):
-        homogenization = '{},' * self.n_columns
-        homo = homogenization[:-1]
+        column_query = ('{},' * self.n_columns)[:-1]
         for each_job in captured_jobs:
             try:
                 self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
-                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, homo.format(*each_job), tuple(each_job.values())))
+                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())))
                 self.conn.commit()
             except:
                 continue

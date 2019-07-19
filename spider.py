@@ -41,46 +41,40 @@ class jobSpider():
                 }
         
     def scheduler(self, fast = False):
-#        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
-        comps = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['lagou']))
-        for each_comp in comps:
-            self.urls.extend(self.URLBuilder(each_comp))
+        idxs = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
+#        idxs = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['linkedin']))
+        for each_idx in idxs:
+            city_name, keyword, source = each_idx
+            city = self.cfgs['cities'][city_name][source]
+            self.urls.extend(eval("self.{}('ersteURL', (city, keyword))".format(source)))
             
         self.urls = random.sample(self.urls,len(self.urls))
         for each_url in self.urls:
-            self.URLParser(each_url)
+            eval("self.{}('zweiteURL', each_url)".format(each_url['source']))
         
         self.spiderCheck()
         
-        filtered = []
+        filtered_jobs = []
         for i, each_job in enumerate(self.job_list):
             if self.filtering(each_job):
-                filtered.append(each_job)
+                filtered_jobs.append(each_job)
             
         if fast == False:
-            censored = []
-            filtered = (random.sample(filtered,len(filtered)))
-            previous_job = filtered[0]['Source']
-            for i, each_job in enumerate(filtered):
+            censored_jobs = []
+            filtered_jobs = (random.sample(filtered_jobs,len(filtered_jobs)))
+            previous_job = filtered_jobs[0]['Source']
+            for i, each_job in enumerate(filtered_jobs):
                 if previous_job == each_job['Source']:
                     self.randomwait()
                 else:
                     previous_job = each_job['Source']
                 if self.censoring(each_job):
-                    censored.append(each_job)
+                    censored_jobs.append(each_job)
             
-            return censored
+            return censored_jobs
         else:
-            return filtered
+            return filtered_jobs
     
-    def URLBuilder(self, component):
-        city_name, keyword, source = component
-        city = self.cfgs['cities'][city_name][source]
-        return eval("self.{}('ersteURL', (city, keyword))".format(source))
-    
-    def URLParser(self, url_dict):
-        eval("self.{}('zweiteURL', url_dict)".format(url_dict['source']))
-        
     def filtering(self, each_job):
         if each_job['URL'][:4] != 'http':
             return False
@@ -89,6 +83,7 @@ class jobSpider():
         elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['filters']['position_stops']):
             return False
         elif each_job['Keyword'][1:] not in each_job['Position']:
+            print('filtering: Keyword {} nicht in dem Position {}. '.format(each_job['Keyword'], each_job['Position']))
             return False
         else:
             return True
@@ -121,12 +116,12 @@ class jobSpider():
                 print('Nah, green channal')
                 censor_key = True
         except:
-            
             exc_type, exc_value, exc_tb = sys.exc_info()
             if 'KeyboardInterrupt' in str(exc_type):
                     raise KeyboardInterrupt
             func_name = sys._getframe().f_code.co_name,
             print('{}: {} Requests/CSS bug with {} / {} at {}.\n'.format(func_name, each_job['Source'], exc_value, exc_type, each_job['URL']))
+            censor_key = False
         return censor_key
     
     def linkedin(self, category, _input):
@@ -149,26 +144,22 @@ class jobSpider():
                 urlsNheaders.append({'source':'linkedin', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
         elif category == 'zweiteURL':
-            url_parse = _input['url']
-            headers = _input['headers']
-            source = _input['source']
-            keyword = _input['keyword']
             release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             try:
-                r = requests.get(url_parse.replace('ERSATZ', '%'), headers = headers,  timeout = 10)
+                r = requests.get(_input['url'].replace('ERSATZ', '%'), headers = _input['headers'],  timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-                jobs = html.select(self.html_css[source])
+                jobs = html.select(self.html_css[_input['source']])
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['data-id']),
-                            'Source': source,
+                            'Source': _input['source'],
                             'Position': each_job.select('span.screen-reader-text')[0].get_text().strip(),
                             'Release': release,
                             'Company': each_job.select('div > h4')[0].get_text().strip(),
                             'Location': each_job.select('div > span')[0].get_text().strip(),
                             'Payment': 'None',
                             'URL': 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{}'.format(each_job['data-id']),
-                            'Keyword': keyword,
+                            'Keyword': _input['keyword'],
                             'Comment': 'None'
                             }
                     self.job_list.append(cache)
@@ -204,26 +195,22 @@ class jobSpider():
                 urlsNheaders.append({'source':'indeed', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
         elif category == 'zweiteURL':
-            url_parse = _input['url']
-            headers = _input['headers']
-            source = _input['source']
-            keyword = _input['keyword']
             release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             try:
-                r = requests.get(url_parse, headers = headers, timeout = 10)
+                r = requests.get(_input['url'], headers = _input['headers'], timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-                jobs = html.select(self.html_css[source])
+                jobs = html.select(self.html_css[_input['source']])
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['id']),
-                            'Source': source,
+                            'Source': _input['source'],
                             'Position': each_job.select('div.title')[0].get_text().strip(),
                             'Release': release,
                             'Company': each_job.select('span.company')[0].get_text().strip(),
                             'Location': each_job.select('span.location')[0].get_text().strip(),
                             'Payment': 'None',
                             'URL': 'https://cn.indeed.com' + each_job.select('div.title > a')[0]['href'],
-                            'Keyword': keyword,
+                            'Keyword': _input['keyword'],
                             'Comment': 'None',
                             }
                     self.job_list.append(cache)
@@ -264,28 +251,24 @@ class jobSpider():
                 urlsNheaders.append({'source':'liepin', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
         elif category == 'zweiteURL':
-            url_parse = _input['url']
-            headers = _input['headers']
-            source = _input['source']
-            keyword = _input['keyword']
             try:
-                r = requests.get(url_parse, headers = headers, timeout = 10)
+                r = requests.get(_input['url'], headers = _input['headers'], timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-                jobs = html.select(self.html_css[source])
+                jobs = html.select(self.html_css[_input['source']])
                 for each_job in jobs:
                     url = each_job.select('div.job-info > h3 > a')[0]['href']
                     if url[:3] == '/a/':
                         url = 'https://www.liepin.com' + url
                     cache = {
                             'UID': str(each_job.select('div.job-info > h3 > a')[0]['href'].split('/')[-1][:-6]),
-                            'Source': source,
+                            'Source': _input['source'],
                             'Position': each_job.select('div.job-info > h3')[0].get_text().strip(),
                             'Release': each_job.select('div.job-info > p > time')[0]['title'][-6:], # '2019年05月09日'
                             'Company': each_job.select('p.company-name > a')[0].get_text().strip(),
                             'Location': each_job.select('div.job-info > p > .area')[0].get_text(),
                             'Payment': each_job.select('div.job-info > p > span')[0].get_text(),
                             'URL': url,
-                            'Keyword': keyword,
+                            'Keyword': _input['keyword'],
                             'Comment': 'None',
                             }
                     self.job_list.append(cache)
@@ -343,24 +326,20 @@ class jobSpider():
                 urlsNheaders.append({'source':'zhilian', 'url':url_parse, 'headers':headers, 'keyword':keyword})
             return urlsNheaders
         elif category == 'zweiteURL':
-            url_parse = _input['url']
-            headers = _input['headers']
-            source = _input['source']
-            keyword = _input['keyword']
             try:
-                r = requests.get(url_parse, headers = headers, timeout = 10)
+                r = requests.get(_input['url'], headers = _input['headers'], timeout = 10)
                 jobs = r.json()['data']['results']
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['number']),
-                            'Source': source,
+                            'Source': _input['source'],
                             'Position': each_job['jobName'],
                             'Release': each_job['updateDate'].split(' ')[0][-5:],
                             'Company': each_job['company']['name'],
                             'Location': each_job['city']['display'],
                             'Payment': each_job['salary'],
                             'URL': each_job['positionURL'],
-                            'Keyword': keyword,
+                            'Keyword': _input['keyword'],
                             'Comment': 'None',
                             }
                     self.job_list.append(cache)
@@ -430,31 +409,23 @@ class jobSpider():
                 
             return urlsNheaders
         elif category == 'zweiteURL':
-            url_parse = _input['url']
-            url_start = _input['url_start']
-            headers = _input['headers']
-            source = _input['source']
-            cookies = _input['cookies']
-            data = _input['data']
-            keyword = _input['keyword']
-            
             try:
-                r = requests.post(url_parse, data=data, headers=headers, cookies=cookies, timeout = 10)
+                r = requests.post(_input['url'], data=_input['data'], headers=_input['headers'], cookies=_input['cookies'], timeout = 10)
                 if '频繁' in r.text:
                     print(r.json())
                 jobs = r.json()['content']['positionResult']['result']
                 for each_job in jobs:
                     cache = {
                             'UID': str(each_job['positionId']),
-                            'Source': source,
+                            'Source': _input['source'],
                             'Position': each_job['positionName'],
                             'Release': each_job['createTime'].split(' ')[0][-5:],
                             'Company': each_job['companyFullName'],
                             'Location': each_job['city'] + ' ' + str(each_job['district']),
                             'Payment': each_job['salary'],
                             'URL': 'https://www.lagou.com/jobs/{}.html'.format(each_job['positionId']),
-                            'Keyword': keyword,
-                            'Comment': url_start,
+                            'Keyword': _input['keyword'],
+                            'Comment': _input['url_start'],
                             } 
                     self.job_list.append(cache)
                     
@@ -503,27 +474,23 @@ class jobSpider():
             return urlsNheaders
         
         elif category == 'zweiteURL':
-            url_parse = _input['url']
-            headers = _input['headers']
-            source = _input['source']
-            cookies = _input['cookies']
-            keyword = _input['keyword']
             release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             try:
-                r = requests.get(url_parse, headers = headers, cookies = cookies, proxies = self.proxies(), timeout = 10)
+                r = requests.get(_input['url'], headers = _input['headers'], cookies = _input['cookies'],\
+                                 proxies = self.proxies(), timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
-                jobs  = html.select(self.html_css[source])
+                jobs  = html.select(self.html_css[_input['source']])
                 for each_job in jobs:
                     cache = {
                             'UID': each_job.select('h3.name > a')[0]['data-jid'],
-                            'Source': source,
+                            'Source': _input['source'],
                             'Position': each_job.select('div.job-title')[0].get_text().strip(),
                             'Release': release,
                             'Company': each_job.select('div.company-text > h3.name > a')[0].get_text().strip(),
                             'Location': each_job.select('div.info-primary > p')[0].get_text().strip(),
                             'Payment': each_job.select('span.red')[0].get_text().strip(),
                             'URL': 'https://www.zhipin.com{}'.format(each_job.select('h3.name > a')[0]['href']),
-                            'Keyword': keyword,
+                            'Keyword': _input['keyword'],
                             'Comment': 'None',
                             }
                     self.job_list.append(cache)
@@ -538,7 +505,7 @@ class jobSpider():
         
     
     def randomwait(self):
-        sec = round(random.randint(3,5) + random.uniform(-1,1), 2)
+        sec = round(random.randint(2,4) + random.uniform(-1,1), 2)
         print('I\'m waiting for {} seconds'.format(sec))
         time.sleep(sec)
         
