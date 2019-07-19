@@ -11,7 +11,7 @@ import time
 import random
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlencode, quote
+from urllib.parse import urlencode, quote, urlsplit, parse_qs
 from itertools import product
 
 
@@ -42,7 +42,7 @@ class jobSpider():
         
     def scheduler(self, fast = False):
         idxs = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), list(self.description_css.keys())))
-#        idxs = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['linkedin']))
+#        idxs = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()),['indeed']))
         for each_idx in idxs:
             city_name, keyword, source = each_idx
             city = self.cfgs['cities'][city_name][source]
@@ -82,9 +82,6 @@ class jobSpider():
             return False
         elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['filters']['position_stops']):
             return False
-        elif each_job['Keyword'][1:] not in each_job['Position']:
-            print('filtering: Keyword {} nicht in dem Position {}. '.format(each_job['Keyword'], each_job['Position']))
-            return False
         else:
             return True
     
@@ -107,13 +104,11 @@ class jobSpider():
                 r = requests.get(each_job['URL'], headers = headers, timeout = 10)
             
             html = BeautifulSoup(r.text, 'html.parser')
-            d = html.select(self.description_css[each_job['Source']])[0]
-                
+            d = html.select(self.description_css[each_job['Source']])[0].get_text().strip()
             if any(each_sw in d for each_sw in self.cfgs['jobs'][each_job['Keyword']]['stop']):
-                print('Bingo gotcha bitch')
                 censor_key = False
             if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['go']):
-                print('Nah, green channal')
+                print('Nah, green channal', each_job['Position'], each_job['URL'])
                 censor_key = True
         except:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -181,10 +176,12 @@ class jobSpider():
                 params = {
                         'as_and': keyword, # 包含所有关键字 
                         'jt': 'fulltime', # 工作类型 临时工什么的
-                        'sr': 'directhire', # 过滤招聘中介
+                        'as_not':'实习',
+                        'as_src':'http%3A%2F%2Fmy.yingjiesheng.com',
+                        'sr': '', # directhire过滤招聘中介
                         'radius': 50, # 位置半径km
                         'l': city,
-                        'fromage': 3, # 3天前
+                        'fromage': 1, # 1天前, 'any'为任何时间
                         'limit': 50, # jobs per page
                         'sort': 'date', # 排序方式
                         'psf': 'advsrch', # 搜索模式 advanced
@@ -446,23 +443,37 @@ class jobSpider():
             
             s = requests.Session()
             for each_page in range(pages):
+                
+                headers_start = {
+                'User-Agent':self.user_agent,
+                'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Host':'www.zhipin.com',
+                'Referer': 'https://www.google.com/',
+                'X-Requested-With':'XMLHttpRequest',
+                'TE':'Trailers',
+                }
+                
+                url_start = 'https://www.zhipin.com/'
+                
                 params = {
                 'query': keyword,
                 'city': city,
                 'page': str(each_page),
-#                    'degree':'204', # master degree
-#                    'experience':'103', # working experience
+#                'degree':'204', # master degree
+                'experience':'104', # working experience
                 }
+                url_parse = 'https://www.zhipin.com/job_detail?' + urlencode(params)
                 headers_parse = {
                 'User-Agent':self.user_agent,
                 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Host':'www.zhipin.com',
-                'Referer': 'https://www.zhipin.com/',
-                'X-Requested-With':'XMLHttpRequest'
+                'X-Requested-With':'XMLHttpRequest',
+                'TE':'Trailers',
+                'Upgrade-Insecure-Requests':'1',
                 }
-                url_parse = 'https://www.zhipin.com/job_detail?' + urlencode(params)
                 try:
-                    s.get(url_parse, headers = headers_parse, timeout = 10, proxies = self.proxies())
+#                    s.get(url_parse, headers = headers_parse, timeout = 10, proxies = self.proxies())
+                    s.get(url_start, headers = headers_start, timeout = 10)
                     urlsNheaders.append({'source':'bosszhipin', 'url':url_parse, 'headers':headers_parse, 'cookies':s.cookies, 'keyword':keyword})
                 except:
                     exc_type, exc_value, exc_tb = sys.exc_info()
@@ -476,8 +487,7 @@ class jobSpider():
         elif category == 'zweiteURL':
             release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             try:
-                r = requests.get(_input['url'], headers = _input['headers'], cookies = _input['cookies'],\
-                                 proxies = self.proxies(), timeout = 10)
+                r = requests.get(_input['url'], headers = _input['headers'], cookies = _input['cookies'],timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs  = html.select(self.html_css[_input['source']])
                 for each_job in jobs:
@@ -549,14 +559,14 @@ if __name__ == "__main__":
                     'jtable_name':'Arbeiten',
                     'ptable_name':'Bad',
                     'ctable_name':'Staedte',
-                    'cities':['beijing','shanghai','shenzhen'],
+                    'cities':['shanghai',],
                     },
             'jobs':{
-                'python后端': {'stop':['++','adoop','3年以上'], 'go':['应届','quirement','raduate']},
-                'python': {'stop':[ '++','crapy','ava','3年以上'], 'go':['应届','quirement','raduate']},
-                '智能交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
-                '交通工程': {'stop':['抗压','轨道','CAD','Auto'], 'go':['应届','海外',]},
-                '智慧交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
+                'python后端': {'stop':['++','adoop','3年以上','精通'], 'go':['应届','quirement','raduate']},
+#                'python': {'stop':[ '++','crapy','ava','3年以上'], 'go':['应届','quirement','raduate']},
+#                '智能交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
+#                '交通工程': {'stop':['抗压','轨道','CAD','Auto'], 'go':['应届','海外',]},
+#                '智慧交通': {'stop':['轨道','CAD','Auto'], 'go':['应届','海外',]},
                 },
             'filters':{
                 'company_stops':['轨道','百度','aidu'],
@@ -565,7 +575,7 @@ if __name__ == "__main__":
             'cities':{
                 'shanghai':{
                             'linkedin':'cnERSATZ3A8909',
-                            'indeed':'上海',
+                            'indeed':'上海市',
                             'liepin':'020',
                             'zhilian':'538',
                             'lagou':'上海',
@@ -589,11 +599,14 @@ if __name__ == "__main__":
                         },
                 },
             }
+                
+    alles = []
     test = jobSpider(job_cfgs)
     for each_keyword in list(test.cfgs['jobs'].keys()):
-        filtered = test.scheduler()
+        alles.extend(test.scheduler())
     ori = test.job_list
     urls = test.urls
-    print(len(ori))
+    print(len(alles),len(ori))
+        
     
 
