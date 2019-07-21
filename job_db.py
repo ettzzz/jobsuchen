@@ -47,12 +47,15 @@ class jobDataBase():
     def allTables(self):
         self.c.execute("SELECT name FROM sqlite_master WHERE TYPE='table' ORDER BY name")
         return self.c.fetchall()
+    
+    def newTables(self):
+        pass
 
     def insert(self, table_name, captured_jobs):
         column_query = ('{},' * self.n_columns)[:-1]
         for each_job in captured_jobs:
             try:
-                self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
+                self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['URL']))
                 self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())))
                 self.conn.commit()
             except:
