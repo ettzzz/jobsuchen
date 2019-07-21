@@ -41,6 +41,7 @@ class jobSpider():
                 'lagou':'',
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
+        self.targets = list(self.description_css.keys())
 
     def startBrowser(self):
         self.browser_options = webdriver.firefox.options.Options()
@@ -48,25 +49,29 @@ class jobSpider():
         self.browser_options.add_argument('--disable-gpu')
         self.browser = webdriver.Firefox(executable_path = self.cfgs['global']['browser_path'], \
                                          options = self.browser_options)
+        self.set_page_load_timeout(30)
         
-        self.browser.get('https://www.linkedin.com/login')
-        self.browser.find_element_by_id('username').send_keys(lkn_username)
-        self.browser.find_element_by_id('password').send_keys(lkn_password)
-        self.browser.find_element_by_class_name('login__form_action_container ').click()
-        self.randomwait()
-        self.browser.get('https://www.linkedin.com/m/logout/')
+        if 'linkedin' in self.targets:
+            self.browser.get('https://www.linkedin.com/login')
+            self.browser.find_element_by_id('username').send_keys(lkn_username)
+            self.browser.find_element_by_id('password').send_keys(lkn_password)
+            self.browser.find_element_by_class_name('login__form_action_container ').click()
+            self.randomwait()
+            self.browser.get('https://www.linkedin.com/m/logout/')
     
     def scheduler(self):
+        
+        idxs = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), self.targets))
+        
         self.startBrowser()
-        targets =  list(self.description_css.keys())
-        idxs = list(product(self.cfgs['global']['cities'], list(self.cfgs['jobs'].keys()), targets))
+        
         for each_idx in idxs:
             city_name, keyword, source = each_idx
             city = self.cfgs['cities'][city_name][source]
             self.urls.extend(eval("self.{}('ersteURL', (city, keyword))".format(source)))
             
-        self.urls = random.sample(self.urls,len(self.urls))
         for each_url in self.urls:
+            self.randomwait(False)
             eval("self.{}('zweiteURL', each_url)".format(each_url['source']))
             
         self.spiderCheck()
@@ -340,16 +345,19 @@ class jobSpider():
                     'Referer': url4cookie,
                     'User-Agent': self.user_agent,
                     }
-                self.browser.get(url4cookie)
-                cookies = self.browser.get_cookies()
-                s = requests.Session()
-                for cookie in cookies:
-                    s.cookies.set(cookie['name'], cookie['value'])
-                urlsNheaders.append({'source':'zhilian', 
-                                     'url':url4jobs, 
-                                     'headers':headers,
-                                     'cookies':s.cookies,
-                                     'keyword':keyword})
+                try:
+                    self.browser.get(url4cookie)
+                    cookies = self.browser.get_cookies()
+                    s = requests.Session()
+                    for cookie in cookies:
+                        s.cookies.set(cookie['name'], cookie['value'])
+                    urlsNheaders.append({'source':'zhilian', 
+                                         'url':url4jobs, 
+                                         'headers':headers,
+                                         'cookies':s.cookies,
+                                         'keyword':keyword})
+                except:
+                    print('zhilian bug: {}'.format(traceback.format_exc()))
                     
             return urlsNheaders
         elif category == 'zweiteURL':
@@ -408,25 +416,27 @@ class jobSpider():
                 'X-Anit-Forge-Token':'None',	
                 'X-Requested-With':'XMLHttpRequest',
                 }
+            try:
+                self.browser.get(url4cookie)
+                cookies = self.browser.get_cookies()
+                s = requests.Session()
+                for cookie in cookies:
+                    s.cookies.set(cookie['name'], cookie['value'])
             
-            self.browser.get(url4cookie)
-            cookies = self.browser.get_cookies()
-            s = requests.Session()
-            for cookie in cookies:
-                s.cookies.set(cookie['name'], cookie['value'])
-        
-            for each_page in range(pages):
-                data = {
-                        'first': 'true' if each_page == 0 else 'false',
-                        'pn': str(each_page+1),
-                        'kd': keyword,
-                        }
-                urlsNheaders.append({'source':'lagou', 
-                                     'url':url4jobs, 
-                                     'headers':headers4jobs, 
-                                     'cookies':s.cookies, 
-                                     'data':data, 
-                                     'keyword':keyword})
+                for each_page in range(pages):
+                    data = {
+                            'first': 'true' if each_page == 0 else 'false',
+                            'pn': str(each_page+1),
+                            'kd': keyword,
+                            }
+                    urlsNheaders.append({'source':'lagou', 
+                                         'url':url4jobs, 
+                                         'headers':headers4jobs, 
+                                         'cookies':s.cookies, 
+                                         'data':data, 
+                                         'keyword':keyword})
+            except:
+                print('lagou bug: {}\n'.format(traceback.format_exc()))
                 
             return urlsNheaders
         elif category == 'zweiteURL':
@@ -477,24 +487,27 @@ class jobSpider():
                 url4jobs = 'https://www.zhipin.com/job_detail?' + urlencode(params)
                 url4cookie = 'https://www.zhipin.com/c{}-p{}/'.format(params['city'], 230204 + random.randint(-2, 2))
                 
-                self.browser.get(url4cookie)
-                cookies = self.browser.get_cookies()
-                s = requests.Session()
-                for cookie in cookies:
-                    s.cookies.set(cookie['name'], cookie['value'])
-                    
-                headers4jobs = {
-                'User-Agent':self.user_agent,
-                'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Host':'www.zhipin.com',
-                'X-Requested-With':'XMLHttpRequest',
-                'TE':'Trailers',
-                }
-                urlsNheaders.append({'source':'bosszhipin', 
-                                     'url':url4jobs, 
-                                     'headers':headers4jobs, 
-                                     'cookies':s.cookies, 
-                                     'keyword':keyword})
+                try:
+                    self.browser.get(url4cookie)
+                    cookies = self.browser.get_cookies()
+                    s = requests.Session()
+                    for cookie in cookies:
+                        s.cookies.set(cookie['name'], cookie['value'])
+                        
+                    headers4jobs = {
+                    'User-Agent':self.user_agent,
+                    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Host':'www.zhipin.com',
+                    'X-Requested-With':'XMLHttpRequest',
+                    'TE':'Trailers',
+                    }
+                    urlsNheaders.append({'source':'bosszhipin', 
+                                         'url':url4jobs, 
+                                         'headers':headers4jobs, 
+                                         'cookies':s.cookies, 
+                                         'keyword':keyword})
+                except:
+                    print('bosszhipin bug: {}\n'.format(traceback.format_exc()))
             return urlsNheaders
         
         elif category == 'zweiteURL':
@@ -528,9 +541,9 @@ class jobSpider():
     
     def randomwait(self, long_wait = True):
         if long_wait == True:
-            sec = round(random.randint(1,2) + random.uniform(0.5,0.7), 2)
+            sec = round(random.randint(1, 2) + random.uniform(0.5, 0.7), 2)
         else:
-            sec = 0.3
+            sec = round(random.uniform(0.3, 0.5), 2)
 #        print('I\'m waiting for {} seconds'.format(sec))
         time.sleep(sec)
         
@@ -566,58 +579,10 @@ class jobSpider():
     
             
 if __name__ == "__main__":
-    job_cfgs = {
-            'global':{
-                    'crawls_per_day':3,
-                    'crawl_size':90,
-                    'db_name': 'jobs.db',
-                    'ptable_name':'pool',
-                    'njtable_name':'',
-                    'ctable_name':'citysets',
-                    'cities':['beijing','shanghai','shenzhen'],
-                    },
-            'jobs':{
-                'python后端': {'stop':['++','adoop','精通'], 'go':['应届','raduate']},
-                'python': {'stop':[ '++','crapy','ava','计算机'], 'go':['应届','raduate']},
-                '智能交通': {'stop':['轨','CAD','Auto'], 'go':['应届','研究','硕士']},
-                '交通工程': {'stop':['抗压','轨','CAD','Auto'], 'go':['应届','研究', '硕士']},
-                },
-           'filters':{
-                'company_stops':['轨','百度','aidu'],
-                'position_stops':['轨','汽','实习','Intern','售','经理','高级','资深','总监','ava','++',],
-                },
-             'cities':{
-                'shanghai':{
-                            'linkedin':{'location':'shanghai', 'locationId':'STATES.cn.sh'},
-                            'indeed':'上海市',
-                            'liepin':'020',
-                            'zhilian':'538',
-                            'lagou':'上海',
-                            'bosszhipin':'101020100'
-                            },
-                'beijing':{
-                            'linkedin':{'location':'beijing', 'locationId':'STATES.cn.bj'},
-                            'indeed':'北京',
-                            'liepin':'010',
-                            'zhilian':'530',
-                            'lagou':'北京',
-                            'bosszhipin':'101010100'
-                            },
-                'shenzhen':{
-                            'linkedin':{'location':'shenzhen', 'locationId':'PLACES.cn.18-9'},
-                            'indeed':'深圳',
-                            'liepin':'050090',
-                            'zhilian':'765',
-                            'lagou':'深圳',
-                            'bosszhipin':'101280600'
-                        },
-                },
-            }
-                
+    from run_job import job_cfgs   
     alles = []
     test = jobSpider(job_cfgs)
-#    for each_keyword in list(test.cfgs['jobs'].keys()):
-#        alles.extend(test.scheduler())
+    alles.extend(test.scheduler())
 #    ori = test.job_list
 #    urls = test.urls
 #    print(len(alles),len(ori))
