@@ -49,7 +49,7 @@ class jobSpider():
         self.browser_options.add_argument('--disable-gpu')
         self.browser = webdriver.Firefox(executable_path = self.cfgs['global']['browser_path'], \
                                          options = self.browser_options)
-        self.set_page_load_timeout(30)
+        self.browser.set_page_load_timeout(30)
         
         if 'linkedin' in self.targets:
             self.browser.get('https://www.linkedin.com/login')
