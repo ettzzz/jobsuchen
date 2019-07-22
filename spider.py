@@ -42,7 +42,8 @@ class jobSpider():
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
+#        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
+        self.targets = ['bosszhipin']
     
     def scheduler(self):
         self.browser_options = webdriver.firefox.options.Options()
@@ -134,7 +135,7 @@ class jobSpider():
                     self.browser.get(url4jobs)
                     self.randomwait()
                     html = BeautifulSoup(self.browser.page_source, 'html.parser')
-                    jobs = html.select(self.html_css[_input['source']])
+                    jobs = html.select(self.html_css['linkedin'])
                     for each_job in jobs:
                         cache = {
                                 'UID': str(each_job['data-id']),
@@ -431,15 +432,21 @@ class jobSpider():
         time.sleep(sec)
         
     def spiderCheck(self, filtered_job):
+        print('spiderCheck: {} captured, {} after filtering.\n'.format(len(self.job_list), len(filtered_job)))
         if len(self.job_list) != 0:
-            un
-            for each_source in list(self.description_css.keys()):
+            ungenuegend = []
+            ungenuegend.extend(self.targets)
+            for each_source in self.targets:
                 for i, each_job in enumerate(self.job_list):
                     if each_job['Source'] == each_source:
-                        print('spiderCheck: {} is ok.\n'.format(each_source))
+                        ungenuegend.remove(each_source)
                         break
-            print('spiderCheck: {} captured {} after filtering.\n'.format(len(self.job_list), len(filtered_job)))
-        else:
+            if len(ungenuegend) == 0:
+                print('spiderCheck: Alles gut!\n')
+            else:
+                for i in ungenuegend:
+                    print('spiderCheck: {} IS NOT OK!\n'.format(i))
+        else: 
             print('spiderCheck: ERROR: THERE IS NO RECORD IN self.job_list.\n')
             sys.exit()
             
