@@ -8,6 +8,7 @@ Created on Mon May  6 10:22:02 2019
 
 
 import sqlite3
+import traceback
 
 class jobDataBase():
     
@@ -20,7 +21,7 @@ class jobDataBase():
         self.initiate()
 #        self.c.execute("PRAGMA table_info({})".format(table_name))
 #        self.n_columns = len(self.c.fetchall())
-        self.n_columns = 10
+        self.n_columns = 9
         
     def initiate(self):
         try:
@@ -40,7 +41,6 @@ class jobDataBase():
                         Payment CHAR(20),\
                         URL TEXT NOT NULL,\
                         Keyword TEXT NOT NULL,\
-                        Comment TEXT\
                         );'.format(table_name))
         self.conn.commit()
     
@@ -59,6 +59,7 @@ class jobDataBase():
                 self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())))
                 self.conn.commit()
             except:
+                traceback.print_exc()
                 continue
     
     def fetch(self, table_name):

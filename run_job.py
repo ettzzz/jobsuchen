@@ -23,20 +23,26 @@ job_cfgs = {
                     'ptable_name':'pool',
                     'njtable_name':'',
                     'ctable_name':'citysets',
-                    'cities':['beijing','shanghai','shenzhen'],
+                    'cities':['beijing','shanghai'],
                     'browser_path':r'D:\anaconda\geckodriver',
                     },
+            'filters':{
+                'company_stops':['百度','aidu','腾讯','银行'],
+                'position_stops':['实习','售','经理','高级','资深','总监','主管','专员','银行',],
+                },
             'jobs':{
-                'python后端': {'stop':['++','adoop','精通','ocker','Vue'], 'go':['应届','raduate']},
-                'python': {'stop':[ '++','adoop','ava','计算机','ocker','Vue'], 'go':['应届','raduate']},
-                '智能交通': {'stop':['轨','CAD','Auto'], 'go':['应届','研究','硕士']},
-                '交通工程': {'stop':['轨','CAD','Auto'], 'go':['应届','研究','硕士']},
+                'python后端': {
+                        'title_red':['日语', 'php', 'ava', 'C', '自动','前端',],
+                        'title_green':[],
+                        'description_red':['++','adoop','ocker','Vue','年以上'], 
+                        'description_green':['应届','raduate']},
+                '智能交通': {
+                        'title_red':['车','规划'],
+                        'title_green':['交通'],
+                        'description_red':['轨','CAD','Auto'], 
+                        'description_green':['应届','究生','硕士']},
                 },
-           'filters':{
-                'company_stops':['轨','百度','aidu'],
-                'position_stops':['轨','汽','实习','Intern','售','经理','高级','资深','总监','ava','++',],
-                },
-             'cities':{
+            'cities':{
                 'shanghai':{
                             'linkedin':{'location':'shanghai', 'locationId':'STATES.cn.sh'},
                             'indeed':'上海市',
@@ -55,7 +61,7 @@ job_cfgs = {
                             },
                 'shenzhen':{
                             'linkedin':{'location':'shenzhen', 'locationId':'PLACES.cn.18-9'},
-                            'indeed':'深圳',
+                            'indeed':'深圳', 
                             'liepin':'050090',
                             'zhilian':'765',
                             'lagou':'深圳',
@@ -76,7 +82,7 @@ def main(cfgs):
         counter = 0
         while counter < crawls_per_day: 
             t_start = time.time()
-            table_name = 'table' + time.strftime('%m%d%H%M',time.localtime(time.time()))
+            table_name = 'table' + time.strftime('%m%d%H%M%S',time.localtime(time.time()))
             print('main: crawling sequence {}/{}, data will be written into {}\n'.format(counter + 1, crawls_per_day, table_name))
             
             db.addTable(table_name)

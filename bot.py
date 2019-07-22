@@ -9,6 +9,7 @@ Created on Mon May  6 10:22:33 2019
 
 import requests
 import time
+from local_var import token, chat_id
 
 class tellMyBot():
 
@@ -38,7 +39,7 @@ class tellMyBot():
                         'parse_mode': 'HTML',
                         }
                 requests.get(self.api_base, headers=self.header, params=bot_params)
-                time.sleep(0.5)
+                time.sleep(0.2)
         else:
             bot_params = {
                         'chat_id': self.chat_id,
@@ -52,4 +53,7 @@ class tellMyBot():
                         'text': 'The pool level is exceeding the threshold! The current level is {}.'.format(pool_level),
                         }
         requests.get(self.api_base, headers=self.header, params=bot_params)
+        
+if __name__ == '__main__':
+    test_bot = tellMyBot(token, chat_id)
             
