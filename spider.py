@@ -42,7 +42,7 @@ class jobSpider():
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-#        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
+#        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou']
         self.targets = ['bosszhipin']
     
     def scheduler(self):
@@ -93,7 +93,6 @@ class jobSpider():
             censor_key = True
             if each_job['Source'] == 'lagou':
                 self.browser.get(each_job['Comment']) #url4cookie
-                self.randomwait()
                 self.browser.get(each_job['URL'])
                 html = BeautifulSoup(self.browser.page_source, 'html.parser')
             else:
@@ -115,7 +114,7 @@ class jobSpider():
                 print('censoring bug: {}\n'.format(traceback.format_exc()))
             return False
     
-    def linkedin(self, city, keyword):
+    def linkedin(self, city, keyword): # linkedin has been temporarilly deprecated
             pages = self.crawl_size // 25 # 25 jobs/page 
             release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
             for each_page in range(pages):
@@ -348,7 +347,6 @@ class jobSpider():
                             'first': 'true' if each_page == 0 else 'false',
                             'pn': str(each_page+1),
                             'kd': keyword,}
-                    self.randomwait()
                     r = requests.post(url4jobs, data = data, headers=headers4jobs, cookies=s.cookies, timeout = 10)
                     if '频繁' in r.text:
                         print('lagou got caught')
@@ -475,3 +473,11 @@ if __name__ == "__main__":
     alles = test.scheduler()
     print(len(alles),len(test.job_list))
     
+
+    from local_var import token, chat_id
+    from job_bot import tellMyBot
+    alles2 = []
+    for i in alles:
+        alles2.append(list(i.values()))
+    bot = tellMyBot(token, chat_id)
+    bot.send2me(alles2)
