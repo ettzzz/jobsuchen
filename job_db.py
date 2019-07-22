@@ -40,7 +40,7 @@ class jobDataBase():
                         Location TEXT,\
                         Payment CHAR(20),\
                         URL TEXT NOT NULL,\
-                        Keyword TEXT NOT NULL,\
+                        Keyword TEXT NOT NULL\
                         );'.format(table_name))
         self.conn.commit()
     
