@@ -21,7 +21,7 @@ class jobDataBase():
         self.initiate()
 #        self.c.execute("PRAGMA table_info({})".format(table_name))
 #        self.n_columns = len(self.c.fetchall())
-        self.n_columns = 9
+        self.n_columns = 10
         
     def initiate(self):
         self.dropEmpty()
@@ -41,7 +41,8 @@ class jobDataBase():
                         Location TEXT,\
                         Payment CHAR(20),\
                         URL TEXT NOT NULL,\
-                        Keyword TEXT NOT NULL\
+                        Keyword TEXT NOT NULL,\
+                        Comment TEXT NOT NULL\
                         );'.format(table_name))
         self.conn.commit()
     
@@ -58,10 +59,10 @@ class jobDataBase():
         for each_job in captured_jobs:
             try:
                 self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['URL']))
-                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())[:-1]))
+                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())))
                 self.conn.commit()
             except:
-                if 'nique' in traceback.format_exc():
+                if 'UNIQUE' in traceback.format_exc():
                     failed += 1
                 else:
                     traceback.print_exc()
