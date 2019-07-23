@@ -23,7 +23,7 @@ class jobSpider():
         self.cfgs = cfgs
         self.crawl_size = self.cfgs['global']['crawl_size']
         self.job_list = []
-        self.urls = []
+        self.targets = []
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0'
         self.description_css = {
                 'linkedin':'section.description',
@@ -42,8 +42,6 @@ class jobSpider():
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
-#        self.targets = ['zhilian']
     
     def scheduler(self):
         self.browser_options = webdriver.firefox.options.Options()
@@ -52,9 +50,12 @@ class jobSpider():
         self.browser.set_page_load_timeout(60)
         
         for job in list(self.cfgs['jobs'].keys()):
-            for city in self.cfgs['global']['cities']:
-                for target in self.targets:
-                    eval("self.{}(self.cfgs['cities'][city][target], job)".format(target))
+            for city in self.cfgs['jobs']['cities']:
+                for web in self.cfgs['jobs']['webs']:
+                    if web not in self.targets:
+                        self.targets.append(web)
+                    eval("self.{}(self.cfgs['cities'][city][web], job)".format(web))
+                    # this should be improved
                 
         filtered_jobs = []
         for i, each_job in enumerate(self.job_list):
@@ -384,7 +385,7 @@ class jobSpider():
             'query': keyword,
             'city': city,
             'page': str(each_page),
-#            'degree':'204', # master degree
+            'degree':'203', # 204 master degree
             'experience':'104', # working experience
             }
             url4jobs = 'https://www.zhipin.com/job_detail?' + urlencode(params4jobs)

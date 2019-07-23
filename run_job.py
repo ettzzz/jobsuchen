@@ -22,7 +22,6 @@ job_cfgs = {
                     'db_name': 'jobs.db',
                     'ptable_name':'pool',
                     'ctable_name':'citysets',
-                    'cities':['beijing','shanghai','shenzhen'],
                     'browser_path':browser_path,
                     },
             'filters':{
@@ -31,11 +30,15 @@ job_cfgs = {
                 },
             'jobs':{
                 'python': {
-                        'title_red':['日语', 'php', 'ava', 'C', '自动','前端',],
+                        'cities':['shanghai'],
+                        'webs':['lagou','bosszhipin','indeed'],
+                        'title_red':['日语', 'php', 'ava', 'C', '自动','前端','AI','讲'],
                         'title_green':['ython'],
-                        'description_red':['++','adoop','ocker','Vue','5年以上'], 
+                        'description_red':['++','adoop','ocker','Vue','3年以上','大专','专科'], 
                         'description_green':['应届','raduate']},
                 '智能交通': {
+                        'cities':['beijing', 'shanghai', 'shenzhen'],
+                        'webs':['liepin','zhilian','bosszhipin','indeed',],
                         'title_red':['车','规划'],
                         'title_green':['交通'],
                         'description_red':['轨','CAD','Auto'], 
