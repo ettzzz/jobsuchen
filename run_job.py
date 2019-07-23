@@ -13,7 +13,7 @@ import re
 from job_db import jobDataBase
 from bot import tellMyBot
 from spider import jobSpider
-from local_var import token, chat_id
+from local_var import token, chat_id, browser_path
 
 job_cfgs = {
             'global':{
@@ -21,10 +21,9 @@ job_cfgs = {
                     'crawl_size':90,
                     'db_name': 'jobs.db',
                     'ptable_name':'pool',
-                    'njtable_name':'',
                     'ctable_name':'citysets',
                     'cities':['beijing','shanghai'],
-                    'browser_path':r'D:\anaconda\geckodriver',
+                    'browser_path':browser_path,
                     },
             'filters':{
                 'company_stops':['百度','aidu','腾讯','银行'],
@@ -33,7 +32,7 @@ job_cfgs = {
             'jobs':{
                 'python后端': {
                         'title_red':['日语', 'php', 'ava', 'C', '自动','前端',],
-                        'title_green':[],
+                        'title_green':['应届'],
                         'description_red':['++','adoop','ocker','Vue','年以上'], 
                         'description_green':['应届','raduate']},
                 '智能交通': {
@@ -82,7 +81,7 @@ def main(cfgs):
         counter = 0
         while counter < crawls_per_day: 
             t_start = time.time()
-            table_name = 'table' + time.strftime('%m%d%H%M%S',time.localtime(time.time()))
+            table_name = 'table' + time.strftime('%m%d%H%M',time.localtime(time.time()))
             print('main: crawling sequence {}/{}, data will be written into {}\n'.format(counter + 1, crawls_per_day, table_name))
             
             db.addTable(table_name)
@@ -95,12 +94,13 @@ def main(cfgs):
             t_crawl = int(time.time() - t_start)
             t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
             t_sleep = t_sleep if t_sleep > 0 else 0
+            print('main: Ok, Ich werde {} Sekunde schalfen\n'.format(t_sleep))
             time.sleep(t_sleep)
             time.sleep(3) # for test
             counter += 1
             
-        if db.pool_check():
-            messager.poolAlert(db.pool_level())
+        if db.poolCheck() > 6000:
+            messager.poolAlert(db.poolCheck())
             
 if __name__ == '__main__':
     main(job_cfgs)

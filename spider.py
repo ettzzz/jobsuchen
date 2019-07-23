@@ -14,7 +14,7 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import urlencode, quote, unquote, urlsplit, parse_qs
 from itertools import product
-from local_var import lkn_username, lkn_password
+#from local_var import lkn_username, lkn_password
 
 
 class jobSpider():
@@ -42,14 +42,14 @@ class jobSpider():
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-#        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou']
-        self.targets = ['bosszhipin']
+        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
+#        self.targets = ['bosszhipin']
     
     def scheduler(self):
         self.browser_options = webdriver.firefox.options.Options()
         self.browser_options.add_argument('--headless')
         self.browser = webdriver.Firefox(executable_path = self.cfgs['global']['browser_path'], options = self.browser_options)
-        self.browser.set_page_load_timeout(30)
+        self.browser.set_page_load_timeout(60)
         
         for job in list(self.cfgs['jobs'].keys()):
             for city in self.cfgs['global']['cities']:
@@ -110,9 +110,12 @@ class jobSpider():
         except:
             if 'KeyboardInterrupt' in traceback.format_exc():
                     raise KeyboardInterrupt
+            elif 'Timeout loading page after' in traceback.format_exc():
+                print('censoring: timeout loading {}\n'.format(each_job['URL']))
+                return True
             else:
                 print('censoring bug: {}\n'.format(traceback.format_exc()))
-            return False
+                return False
     
     def linkedin(self, city, keyword): # linkedin has been temporarilly deprecated
             pages = self.crawl_size // 25 # 25 jobs/page 
@@ -474,10 +477,10 @@ if __name__ == "__main__":
     print(len(alles),len(test.job_list))
     
 
-    from local_var import token, chat_id
-    from job_bot import tellMyBot
-    alles2 = []
-    for i in alles:
-        alles2.append(list(i.values()))
-    bot = tellMyBot(token, chat_id)
-    bot.send2me(alles2)
+#    from local_var import token, chat_id
+#    from bot import tellMyBot
+#    alles2 = []
+#    for i in alles:
+#        alles2.append(list(i.values()))
+#    bot = tellMyBot(token, chat_id)
+#    bot.send2me(alles2)

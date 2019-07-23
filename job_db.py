@@ -15,7 +15,7 @@ class jobDataBase():
     def __init__(self):
         self.database = 'jobs.db'
         self.pool_table = 'pool'
-        
+        self.city_table = 'cityset'
         self.conn = sqlite3.connect(self.database)
         self.c = self.conn.cursor()
         self.initiate()
@@ -24,6 +24,7 @@ class jobDataBase():
         self.n_columns = 9
         
     def initiate(self):
+        self.dropEmpty()
         try:
             self.c.execute('CREATE TABLE {}(UID TEXT PRIMARY KEY NOT NULL);'.format(self.pool_table))
             self.conn.commit()
@@ -56,10 +57,9 @@ class jobDataBase():
         for each_job in captured_jobs:
             try:
                 self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['URL']))
-                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())))
+                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())[:-1]))
                 self.conn.commit()
             except:
-                traceback.print_exc()
                 continue
     
     def fetch(self, table_name):
@@ -70,14 +70,22 @@ class jobDataBase():
         self.c.execute("DELETE FROM {};".format(table_name))
         self.conn.commit()
         
-    def reset(self):
+    def reset(self): # Use with cautions
         for each_table in self.allTables():
-            self.c.execute("DROP TABLE {};".format(each_table[0]))
+            if each_table != self.city_table:
+                self.c.execute("DROP TABLE {};".format(each_table[0]))
         self.conn.commit()
         
-    def pool_check(self):
+    def poolCheck(self):
         self.c.execute("SELECT count(*) FROM {};".format(self.pool_table))
-        return True if self.c.fetchall()[0][0] > 6000 else False
+        return self.c.fetchall()[0][0]
     
+    def dropEmpty(self):
+        for each_table in self.allTables():
+            if each_table not in [self.pool_table, self.city_table]:
+                self.c.execute("SELECT count(*) FROM {};".format(each_table[0]))
+                if self.c.fetchall()[0][0] == 0:
+                    self.c.execute("DROP TABLE {};".format(each_table[0]))
+                
 if __name__ == '__main__':
-    test = jobDataBase()
+    test_db = jobDataBase()
