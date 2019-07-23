@@ -42,8 +42,8 @@ class jobSpider():
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
-#        self.targets = ['bosszhipin']
+#        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
+        self.targets = ['zhilian']
     
     def scheduler(self):
         self.browser_options = webdriver.firefox.options.Options()
@@ -111,7 +111,7 @@ class jobSpider():
         except:
             if 'KeyboardInterrupt' in traceback.format_exc():
                     raise KeyboardInterrupt
-            elif 'Timeout loading page after' in traceback.format_exc():
+            elif 'imeout' in traceback.format_exc():
                 print('censoring: timeout loading {}\n'.format(each_job['URL']))
                 return True
             else:
@@ -289,15 +289,13 @@ class jobSpider():
                 'User-Agent': self.user_agent,
                 }
             try:
-                self.browser.get(url4cookie)
-                cookies = self.browser.get_cookies()
+#                self.browser.get(url4cookie)
+#                cookies = self.browser.get_cookies()
+#                s = requests.Session()
+#                for cookie in cookies:
+#                    s.cookies.set(cookie['name'], cookie['value'])
                 s = requests.Session()
-                for cookie in cookies:
-                    s.cookies.set(cookie['name'], cookie['value'])
-            except:
-                print('zhilian bug: {}'.format(traceback.format_exc()))
-                    
-            try:
+                s.get(url4cookie, headers = {'User-Agent':self.user_agent, 'Host':'sou.zhaopin.com','Referer':'https://www.zhaopin.com'})
                 r = requests.get(url4jobs, headers = headers4jobs, cookies = s.cookies, timeout = 10)
                 jobs = r.json()['data']['results']
                 for each_job in jobs:
@@ -344,13 +342,15 @@ class jobSpider():
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0',
                 }
             try:
-                s = requests.Session()
-                s.get(url4cookie, headers = headers4jobs, timeout = 5)
+                
                 for each_page in range(pages):
                     data = {
                             'first': 'true' if each_page == 0 else 'false',
                             'pn': str(each_page+1),
-                            'kd': keyword,}
+                            'kd': keyword,
+                            }
+                    s = requests.Session()
+                    s.get(url4cookie, headers = headers4jobs, timeout = 5)
                     r = requests.post(url4jobs, data = data, headers=headers4jobs, cookies=s.cookies, timeout = 10)
                     if '频繁' in r.text:
                         print('lagou got caught')
