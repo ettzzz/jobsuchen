@@ -30,9 +30,9 @@ job_cfgs = {
                 'position_stops':['实习','售','经理','高级','资深','总监','主管','专员','银行',],
                 },
             'jobs':{
-                'python后端': {
+                'python': {
                         'title_red':['日语', 'php', 'ava', 'C', '自动','前端',],
-                        'title_green':['应届'],
+                        'title_green':['ython'],
                         'description_red':['++','adoop','ocker','Vue','5年以上'], 
                         'description_green':['应届','raduate']},
                 '智能交通': {

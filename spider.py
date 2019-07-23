@@ -60,15 +60,16 @@ class jobSpider():
         for i, each_job in enumerate(self.job_list):
             if self.filtering(each_job):
                 filtered_jobs.append(each_job)
-        
-        self.spiderCheck(filtered_jobs)
+         
+        self.spiderCheck()
+        print('scheduler: {} captured, {} after filtering.\n'.format(len(self.job_list), len(filtered_jobs)))
         
         censored_jobs = []
         for i, each_job in enumerate(filtered_jobs):
             self.randomwait()
             if self.censoring(each_job):
                 censored_jobs.append(each_job)
- 
+        print('scheduler: {} after censoring.\n'.format(len(censored_jobs)))
         self.browser.close()
         
         return censored_jobs
@@ -96,7 +97,7 @@ class jobSpider():
                 self.browser.get(each_job['URL'])
                 html = BeautifulSoup(self.browser.page_source, 'html.parser')
             else:
-                r = requests.get(each_job['URL'], headers = each_job['Comment'], timeout = 10)
+                r = requests.get(each_job['URL'], headers = eval(each_job['Comment']), timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
             
             d = html.select(self.description_css[each_job['Source']])[0].get_text().strip()
@@ -149,7 +150,7 @@ class jobSpider():
                                 'Payment': 'None',
                                 'URL': 'https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{}'.format(each_job['data-id']),
                                 'Keyword': keyword,
-                                'Comment': {'User-Agent':self.user_agent},
+                                'Comment': str({'User-Agent':self.user_agent}),
                                 }
                         self.job_list.append(cache)
                 except:
@@ -192,7 +193,7 @@ class jobSpider():
                             'Payment': 'None',
                             'URL': 'https://cn.indeed.com' + each_job.select('div.title > a')[0]['href'],
                             'Keyword': keyword,
-                            'Comment':{'User-Agent':self.user_agent},
+                            'Comment':str({'User-Agent':self.user_agent}),
                             }
                     self.job_list.append(cache)
             except:
@@ -240,7 +241,7 @@ class jobSpider():
                             'Payment': each_job.select('div.job-info > p > span')[0].get_text(),
                             'URL': url,
                             'Keyword': keyword,
-                            'Comment': {'User-Agent':self.user_agent},
+                            'Comment': str({'User-Agent':self.user_agent}),
                             }
                     self.job_list.append(cache)
             except:
@@ -310,7 +311,7 @@ class jobSpider():
                             'Payment': each_job['salary'],
                             'URL': each_job['positionURL'],
                             'Keyword': keyword,
-                            'Comment': headers4jobs,
+                            'Comment': str(headers4jobs),
                             }
                     self.job_list.append(cache)
             except:
@@ -418,7 +419,7 @@ class jobSpider():
                             'Payment': each_job.select('span.red')[0].get_text().strip(),
                             'URL': 'https://www.zhipin.com{}'.format(each_job.select('h3.name > a')[0]['href']),
                             'Keyword': keyword,
-                            'Comment': headers4jobs,
+                            'Comment': str(headers4jobs),
                             }
                     self.job_list.append(cache)
             except:
@@ -432,8 +433,7 @@ class jobSpider():
         sec = round(random.randint(1, 2) + random.uniform(0.5, 0.7), 2)
         time.sleep(sec)
         
-    def spiderCheck(self, filtered_job):
-        print('spiderCheck: {} captured, {} after filtering.\n'.format(len(self.job_list), len(filtered_job)))
+    def spiderCheck(self):
         if len(self.job_list) != 0:
             ungenuegend = []
             ungenuegend.extend(self.targets)
