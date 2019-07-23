@@ -54,13 +54,18 @@ class jobDataBase():
 
     def insert(self, table_name, captured_jobs):
         column_query = ('{},' * self.n_columns)[:-1]
+        failed = 0
         for each_job in captured_jobs:
             try:
                 self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['URL']))
                 self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())[:-1]))
                 self.conn.commit()
             except:
-                continue
+                if 'nique' in traceback.format_exc():
+                    failed += 1
+                else:
+                    traceback.print_exc()
+        print('db: There are {} redundant records\n'.format(failed))
     
     def fetch(self, table_name):
         self.c.execute('SELECT * FROM {};'.format(table_name))

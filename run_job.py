@@ -22,7 +22,7 @@ job_cfgs = {
                     'db_name': 'jobs.db',
                     'ptable_name':'pool',
                     'ctable_name':'citysets',
-                    'cities':['beijing','shanghai'],
+                    'cities':['beijing','shanghai','shenzhen'],
                     'browser_path':browser_path,
                     },
             'filters':{
@@ -33,7 +33,7 @@ job_cfgs = {
                 'python后端': {
                         'title_red':['日语', 'php', 'ava', 'C', '自动','前端',],
                         'title_green':['应届'],
-                        'description_red':['++','adoop','ocker','Vue','年以上'], 
+                        'description_red':['++','adoop','ocker','Vue','5年以上'], 
                         'description_green':['应届','raduate']},
                 '智能交通': {
                         'title_red':['车','规划'],
