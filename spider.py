@@ -42,8 +42,8 @@ class jobSpider():
                 'bosszhipin':'#main > div > div.job-list > ul > li',
                 }
         
-#        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
-        self.targets = ['zhilian']
+        self.targets = ['indeed', 'zhilian', 'liepin', 'lagou', 'bosszhipin']
+#        self.targets = ['zhilian']
     
     def scheduler(self):
         self.browser_options = webdriver.firefox.options.Options()
