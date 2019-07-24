@@ -10,29 +10,57 @@ Created on Mon May  6 10:22:02 2019
 import sqlite3
 import traceback
 
+
 class jobDataBase():
     
     def __init__(self):
         self.database = 'jobs.db'
         self.pool_table = 'pool'
         self.city_table = 'cityset'
-        self.conn = sqlite3.connect(self.database)
-        self.c = self.conn.cursor()
-        self.initiate()
-#        self.c.execute("PRAGMA table_info({})".format(table_name))
-#        self.n_columns = len(self.c.fetchall())
+        self.buildPool()
+        self.buildCityset()
+#        c.execute("PRAGMA table_info({})".format(table_name))
+#        self.n_columns = len(c.fetchall())
         self.n_columns = 10
         
-    def initiate(self):
-        self.dropEmpty()
-        try:
-            self.c.execute('CREATE TABLE {}(UID TEXT PRIMARY KEY NOT NULL);'.format(self.pool_table))
-            self.conn.commit()
-        except:
+    def db_switch_on(self):
+        conn = sqlite3.connect(self.database)
+        c = conn.cursor()
+        return conn, c
+    
+    def buildPool(self):
+        tables = self.allTables()
+        conn, c = self.db_switch_on()
+        if (self.pool_table,) not in tables:
+            c.execute('CREATE TABLE {}(UID TEXT PRIMARY KEY NOT NULL);'.format(self.pool_table))
+            conn.commit()
+        else:
             pass
+        c.close()
+        conn.close()
+        
+    def buildCityset(self):
+        tables = self.allTables()
+        conn, c = self.db_switch_on()
+        if (self.city_table,) not in tables:
+            c.execute('CREATE TABLE {}(\
+                      UID INTEGER PRIMARY KEY AUTOINCREMENT,\
+                      pinyin TEXT NOT NULL,\
+                      linkedin TEXT,\
+                      indeed TEXT,\
+                      zhilian TEXT,\
+                      liepin TEXT,\
+                      lagou TEXT,\
+                      bosszhipin TEXT);'.format(self.pool_table))
+            conn.commit()
+        else:
+            pass
+        c.close()
+        conn.close()
         
     def addTable(self, table_name):
-        self.c.execute('CREATE TABLE {}(\
+        conn, c = self.db_switch_on()
+        c.execute('CREATE TABLE {}(\
                         UID TEXT PRIMARY KEY NOT NULL,\
                         Source CHAR(20) NOT NULL,\
                         Position TEXT NOT NULL,\
@@ -44,54 +72,86 @@ class jobDataBase():
                         Keyword TEXT NOT NULL,\
                         Comment TEXT NOT NULL\
                         );'.format(table_name))
-        self.conn.commit()
+        conn.commit()
+        c.close()
+        conn.close()
     
     def allTables(self):
-        self.c.execute("SELECT name FROM sqlite_master WHERE TYPE='table' ORDER BY name")
-        return self.c.fetchall()
+        conn, c = self.db_switch_on()
+        c.execute("SELECT name FROM sqlite_master WHERE TYPE='table' ORDER BY name")
+        x = c.fetchall()
+        c.close()
+        conn.close()
+        return x
     
-    def newTables(self):
-        pass
-
     def insert(self, table_name, captured_jobs):
+        conn, c = self.db_switch_on()
         column_query = ('{},' * self.n_columns)[:-1]
         failed = 0
         for each_job in captured_jobs:
             try:
-                self.c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['URL']))
-                self.c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())))
-                self.conn.commit()
+                c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['URL']))
+                c.execute("INSERT INTO {} ({}) VALUES {};".format(table_name, column_query.format(*each_job), tuple(each_job.values())))
+                conn.commit()
             except:
                 if 'UNIQUE' in traceback.format_exc():
                     failed += 1
                 else:
                     traceback.print_exc()
         print('db: There are {} redundant records\n'.format(failed))
+        c.close()
+        conn.close()
     
     def fetch(self, table_name):
-        self.c.execute('SELECT * FROM {};'.format(table_name))
-        return self.c.fetchall()
+        conn, c = self.db_switch_on()
+        c.execute('SELECT * FROM {};'.format(table_name))
+        x = c.fetchall()
+        c.close()
+        conn.close()
+        return x
     
     def clean(self, table_name):
-        self.c.execute("DELETE FROM {};".format(table_name))
-        self.conn.commit()
+        conn, c = self.db_switch_on()
+        c.execute("DELETE FROM {};".format(table_name))
+        conn.commit()
+        c.close()
+        conn.close()
         
     def reset(self): # Use with cautions
+        conn, c = self.db_switch_on()
         for each_table in self.allTables():
             if each_table != self.city_table:
-                self.c.execute("DROP TABLE {};".format(each_table[0]))
-        self.conn.commit()
+                c.execute("DROP TABLE {};".format(each_table[0]))
+                conn.commit()
+        c.close()
+        conn.close()
         
     def poolCheck(self):
-        self.c.execute("SELECT count(*) FROM {};".format(self.pool_table))
-        return self.c.fetchall()[0][0]
+        conn, c = self.db_switch_on()
+        c.execute("SELECT count(*) FROM {};".format(self.pool_table))
+        x = c.fetchall()[0][0]
+        c.close()
+        conn.close()
+        return x
+    
+    def poolShow(self):
+        conn, c = self.db_switch_on()
+        c.execute("SELECT * FROM {};".format(self.pool_table))
+        x = c.fetchall()
+        c.close()
+        conn.close()
+        return x
     
     def dropEmpty(self):
+        conn, c = self.db_switch_on()
         for each_table in self.allTables():
             if each_table not in [self.pool_table, self.city_table]:
-                self.c.execute("SELECT count(*) FROM {};".format(each_table[0]))
-                if self.c.fetchall()[0][0] == 0:
-                    self.c.execute("DROP TABLE {};".format(each_table[0]))
-                
+                c.execute("SELECT count(*) FROM {};".format(each_table[0]))
+                if c.fetchall()[0][0] == 0:
+                    c.execute("DROP TABLE {};".format(each_table[0]))
+                    conn.commit()
+        c.close()
+        conn.close()
+                                
 if __name__ == '__main__':
     test_db = jobDataBase()

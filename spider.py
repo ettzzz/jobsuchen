@@ -43,81 +43,77 @@ class jobSpider():
                 }
         
     
-    def scheduler(self):
+    def scheduler(self, pool):
         self.browser_options = webdriver.firefox.options.Options()
         self.browser_options.add_argument('--headless')
         self.browser = webdriver.Firefox(executable_path = self.cfgs['global']['browser_path'], options = self.browser_options)
         self.browser.set_page_load_timeout(60)
         
         for job in list(self.cfgs['jobs'].keys()):
-            for city in self.cfgs['jobs']['cities']:
-                for web in self.cfgs['jobs']['webs']:
+            for city in self.cfgs['jobs'][job]['cities']:
+                for web in self.cfgs['jobs'][job]['webs']:
                     if web not in self.targets:
                         self.targets.append(web)
                     eval("self.{}(self.cfgs['cities'][city][web], job)".format(web))
                     # this should be improved
-                
-        filtered_jobs = []
-        for i, each_job in enumerate(self.job_list):
-            if self.filtering(each_job):
-                filtered_jobs.append(each_job)
-         
+        filtered_jobs = self.filtering(pool)
         self.spiderCheck()
         print('scheduler: {} captured, {} after filtering.\n'.format(len(self.job_list), len(filtered_jobs)))
-        
-        censored_jobs = []
-        for i, each_job in enumerate(filtered_jobs):
-            self.randomwait()
-            if self.censoring(each_job):
-                censored_jobs.append(each_job)
+        censored_jobs = self.censoring(filtered_jobs)
         print('scheduler: {} after censoring.\n'.format(len(censored_jobs)))
         self.browser.close()
-        
         return censored_jobs
 
-
-    def filtering(self, each_job):
-        if each_job['URL'][:4] != 'http':
-            return False
-        elif any(each_verbot in each_job['Company'] for each_verbot in self.cfgs['filters']['company_stops']):
-            return False
-        elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['filters']['position_stops']):
-            return False
-        elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['jobs'][each_job['Keyword']]['title_red']):
-            return False
-        elif any(each_green not in each_job['Position'] for each_green in self.cfgs['jobs'][each_job['Keyword']]['title_green']):
-            return False
-        else:
-            return True
+    def filtering(self, pool):
+        filtered_jobs = []
+        for i, each_job in enumerate(self.job_list):
+            if each_job['URL'][:4] != 'http':
+                continue
+            elif any(each_verbot in each_job['Company'] for each_verbot in self.cfgs['filters']['company_stops']):
+                continue
+            elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['filters']['position_stops']):
+                continue
+            elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['jobs'][each_job['Keyword']]['title_red']):
+                continue
+            elif any(each_green not in each_job['Position'] for each_green in self.cfgs['jobs'][each_job['Keyword']]['title_green']):
+                continue
+            elif (each_job['URL'],) in pool:
+                continue
+            else:
+                filtered_jobs.append(each_job)
+        return filtered_jobs
     
-    def censoring(self, each_job):
-        try:
-            censor_key = True
-            if each_job['Source'] == 'lagou':
-                self.browser.get(each_job['Comment']) #url4cookie
-                self.browser.get(each_job['URL'])
-                html = BeautifulSoup(self.browser.page_source, 'html.parser')
-            else:
-                r = requests.get(each_job['URL'], headers = eval(each_job['Comment']), timeout = 10)
-                html = BeautifulSoup(r.text, 'html.parser')
-            
-            d = html.select(self.description_css[each_job['Source']])[0].get_text().strip()
-            
-            if any(each_sw in d for each_sw in self.cfgs['jobs'][each_job['Keyword']]['description_red']):
-                censor_key = False
-            if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['description_green']):
-                print('Nah, green channel', each_job['Position'], each_job['URL'])
-                censor_key = True
-            return censor_key
-        except:
-            if 'KeyboardInterrupt' in traceback.format_exc():
-                    raise KeyboardInterrupt
-            elif 'imeout' in traceback.format_exc():
-                print('censoring: timeout loading {}\n'.format(each_job['URL']))
-                return True
-            else:
-                print('censoring bug: {}\n'.format(traceback.format_exc()))
-                return False
+    def censoring(self, filtered):
+        censored_jobs = []
+        for i, each_job in enumerate(filtered):
+            self.randomwait()
+            try:
+                if each_job['Source'] == 'lagou':
+                    self.browser.get(each_job['Comment']) #url4cookie
+                    self.browser.get(each_job['URL'])
+                    html = BeautifulSoup(self.browser.page_source, 'html.parser')
+                else:
+                    r = requests.get(each_job['URL'], headers = eval(each_job['Comment']), timeout = 10)
+                    html = BeautifulSoup(r.text, 'html.parser')
+                
+                d = html.select(self.description_css[each_job['Source']])[0].get_text().strip()
+                
+                if any(each_sw in d for each_sw in self.cfgs['jobs'][each_job['Keyword']]['description_red']):
+                    continue
+                if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['description_green']):
+                    print('Nah, green channel', each_job['Position'], each_job['URL'])
+                    censored_jobs.append(each_job)
+            except:
+                if 'KeyboardInterrupt' in traceback.format_exc():
+                        raise KeyboardInterrupt
+                elif 'imeout' in traceback.format_exc():
+                    print('censoring: timeout loading {}\n'.format(each_job['URL']))
+                    censored_jobs.append(each_job)
+                else:
+                    print('censoring bug: {}, {}\n'.format(traceback.format_exc(), each_job['URL']))
+                    continue
+                
+        return censored_jobs
     
     def linkedin(self, city, keyword): # linkedin has been temporarilly deprecated
             pages = self.crawl_size // 25 # 25 jobs/page 

@@ -9,7 +9,7 @@ Created on Mon May  6 09:38:46 2019
 
 import time
 import random
-import re
+import gc
 from job_db import jobDataBase
 from bot import tellMyBot
 from spider import jobSpider
@@ -30,11 +30,11 @@ job_cfgs = {
                 },
             'jobs':{
                 'python': {
-                        'cities':['shanghai'],
-                        'webs':['lagou','bosszhipin','indeed'],
-                        'title_red':['日语', 'php', 'ava', 'C', '自动','前端','AI','讲'],
-                        'title_green':['ython'],
-                        'description_red':['++','adoop','ocker','Vue','3年以上','大专','专科'], 
+                        'cities':['shanghai', 'beijing'],
+                        'webs':['lagou','bosszhipin','indeed','liepin'],
+                        'title_red':['日语', 'php', 'ava', 'C', '自动','前端','课','讲'],
+                        'title_green':['ython','工程'],
+                        'description_red':['++','adoop','ocker','Vue','大专','专科'], 
                         'description_green':['应届','raduate']},
                 '智能交通': {
                         'cities':['beijing', 'shanghai', 'shenzhen'],
@@ -88,7 +88,8 @@ def main(cfgs):
             print('main: crawling sequence {}/{}, data will be written into {}\n'.format(counter + 1, crawls_per_day, table_name))
             
             db.addTable(table_name)
-            captured = agent.scheduler()
+            current_pool = db.poolShow()
+            captured = agent.scheduler(current_pool)
             db.insert(table_name, captured)
             
             print('main: Sending messages to bot...\n')
@@ -97,14 +98,16 @@ def main(cfgs):
             t_crawl = int(time.time() - t_start)
             t_sleep = 86400/crawls_per_day - t_crawl + random.randint(-600, 600)
             t_sleep = t_sleep if t_sleep > 0 else 0
-            print('main: Ok, Ich werde {} Sekunde schalfen\n'.format(t_sleep))
-            time.sleep(t_sleep)
+            print('main: Ok, Ich werde {} Stunde schalfen\n'.format(round(t_sleep/3600, 2)))
+#            time.sleep(t_sleep)
             time.sleep(3) # for test
             counter += 1
             
-        if db.poolCheck() > 6000:
+        if db.poolCheck() > 2000:
             messager.poolAlert(db.poolCheck())
-            
+        db.dropEmpty()
+        gc.collect()
+        
 if __name__ == '__main__':
     main(job_cfgs)
 
