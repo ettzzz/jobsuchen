@@ -51,7 +51,7 @@ class jobDataBase():
                       zhilian TEXT,\
                       liepin TEXT,\
                       lagou TEXT,\
-                      bosszhipin TEXT);'.format(self.pool_table))
+                      bosszhipin TEXT);'.format(self.city_table))
             conn.commit()
         else:
             pass
