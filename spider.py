@@ -77,7 +77,7 @@ class jobSpider():
                 continue
             elif any(each_green not in each_job['Position'] for each_green in self.cfgs['jobs'][each_job['Keyword']]['title_green']):
                 continue
-            elif (each_job['URL'],) in pool:
+            elif (each_job['UID'],) in pool:
                 continue
             else:
                 filtered_jobs.append(each_job)
