@@ -17,7 +17,7 @@ from local_var import token, chat_id, browser_path
 
 job_cfgs = {
             'global':{
-                    'crawls_per_day':12,
+                    'crawls_per_day':6,
                     'crawl_size':90,
                     'db_name': 'jobs.db',
                     'ptable_name':'pool',
@@ -82,9 +82,9 @@ def main(cfgs):
         counter = 0
         while counter < crawls_per_day: 
             print('main: crawling sequence {}/{},\n'.format(counter + 1, crawls_per_day))
-            agent = jobSpider(cfgs)
             t_start = time.time()
             current_pool = db.poolShow()
+            agent = jobSpider(cfgs)
             captured = agent.scheduler(current_pool)
             db.insert(captured)
             
@@ -93,9 +93,8 @@ def main(cfgs):
             t_sleep = t_sleep if t_sleep > 0 else 0
             print('main: Ok, Ich werde {} Stunde schalfen\n'.format(round(t_sleep/3600, 2)))
             time.sleep(t_sleep)
-            time.sleep(3) # for test
+#            time.sleep(3) # for test
             counter += 1
-        break
         if db.poolCheck() > 2000:
             messager = tellMyBot(token, chat_id)
             messager.poolAlert(db.poolCheck())

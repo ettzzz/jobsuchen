@@ -13,8 +13,7 @@ import time
 def main():
     db = jobDataBase()
     messager = tellMyBot(token, chat_id)
-    
-    new_jobs = db.fetch('new')
+    new_jobs = db.fetchnew()
     print('call: Sending messages to bot...\n')
     messager.send2me(new_jobs)
     new_timestamp = int(time.strftime('%y%m%d%H%M',time.localtime(time.time())))

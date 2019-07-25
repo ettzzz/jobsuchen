@@ -85,8 +85,7 @@ class jobDataBase():
             conn.commit()
             c.close()
             conn.close()
-            ts = int(time.strftime('%y%m%d%H%M',time.localtime(time.time())))
-            self.addTimestamp(ts)
+            self.addTimestamp(1900000000)
         
     def readTimestamp(self):
         conn, c = self.db_switch_on()
@@ -132,14 +131,18 @@ class jobDataBase():
         c.close()
         conn.close()
     
-    def fetch(self, cat = 'all'):
-        if cat == 'all':
-            conn, c = self.db_switch_on()
-            c.execute('SELECT * FROM {};'.format(self.job_table))
-        elif cat == 'new':
-            ts = self.readTimestamp()
-            conn, c = self.db_switch_on()
-            c.execute('SELECT * FROM {} WHERE Timestamp > {};'.format(self.job_table, ts))
+    def fetch(self):
+        conn, c = self.db_switch_on()
+        c.execute('SELECT * FROM {};'.format(self.job_table))
+        x = c.fetchall()
+        c.close()
+        conn.close()
+        return x
+
+    def fetchnew(self):
+        ts = self.readTimestamp()
+        conn, c = self.db_switch_on()
+        c.execute('SELECT * FROM {} WHERE Timestamp > {};'.format(self.job_table, ts))
         x = c.fetchall()
         c.close()
         conn.close()
