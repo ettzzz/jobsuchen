@@ -92,6 +92,9 @@ class jobSpider():
                     self.browser.get(each_job['Comment']) #url4cookie
                     self.browser.get(each_job['URL'])
                     html = BeautifulSoup(self.browser.page_source, 'html.parser')
+                elif each_job['Source'] == 'zhilian':
+                    self.browser.get(each_job['URL'])
+                    html = BeautifulSoup(self.browser.page_source, 'html.parser')
                 else:
                     r = requests.get(each_job['URL'], headers = eval(each_job['Comment']), timeout = 10)
                     html = BeautifulSoup(r.text, 'html.parser')
@@ -281,16 +284,12 @@ class jobSpider():
             url4jobs = 'https://fe-api.zhaopin.com/c/i/sou?' + urlencode(params4jobs)
             headers4jobs = {
                 'Accept': 'application/json, text/plain, */*',
+#                'Host':'jobs.zhaopin.com',
                 'Origin': 'https://sou.zhaopin.com',
                 'Referer': url4cookie,
                 'User-Agent': self.user_agent,
                 }
             try:
-#                self.browser.get(url4cookie)
-#                cookies = self.browser.get_cookies()
-#                s = requests.Session()
-#                for cookie in cookies:
-#                    s.cookies.set(cookie['name'], cookie['value'])
                 s = requests.Session()
                 s.get(url4cookie, headers = {'User-Agent':self.user_agent, 'Host':'sou.zhaopin.com','Referer':'https://www.zhaopin.com'})
                 r = requests.get(url4jobs, headers = headers4jobs, cookies = s.cookies, timeout = 10)

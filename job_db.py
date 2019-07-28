@@ -113,7 +113,6 @@ class jobDataBase():
     def insert(self, captured_jobs):
         conn, c = self.db_switch_on()
         timestamp = int(time.strftime('%y%m%d%H%M',time.localtime(time.time())))
-        failed = 0
         for i, each_job in enumerate(captured_jobs):
             try:
                 c.execute("INSERT INTO {} (UID) VALUES ('{}');".format(self.pool_table, each_job['UID']))
@@ -122,12 +121,8 @@ class jobDataBase():
                 c.execute("INSERT INTO {} (UID, Source, Position, Release, Company, Location, Payment, URL, Keyword,Timestamp) \
                           VALUES {};".format(self.job_table, values))
             except:
-                if 'UNIQUE' in traceback.format_exc():
-                    failed += 1
-                else:
-                    traceback.print_exc()
+                traceback.print_exc()
             conn.commit()
-        print('db: There are {} redundant records\n'.format(failed))
         c.close()
         conn.close()
     
