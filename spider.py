@@ -305,7 +305,7 @@ class jobSpider():
                             'Payment': each_job['salary'],
                             'URL': each_job['positionURL'],
                             'Keyword': keyword,
-                            'Comment': str(headers4jobs),
+                            'Comment': str({'User-Agent':self.user_agent}),
                             }
                     self.job_list.append(cache)
             except:
@@ -467,9 +467,11 @@ class jobSpider():
     
             
 if __name__ == "__main__":
-    from run_job import job_cfgs   
+    from run_job import job_cfgs  
+    from job_db import jobDataBase
+    db = jobDataBase()
     test = jobSpider(job_cfgs)
-    alles = test.scheduler()
+    alles = test.scheduler(db.poolShow())
     print(len(alles),len(test.job_list))
     
 
