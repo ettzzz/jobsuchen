@@ -37,9 +37,9 @@ job_cfgs = {
                         'description_red':['++','adoop','ocker','Vue','大专','专科'], 
                         'description_green':['应届','raduate']},
                 '智能交通': {
-                        'cities':['beijing', 'shanghai', 'shenzhen'],
+                        'cities':['shanghai', 'shenzhen'],
                         'webs':['liepin','zhilian','bosszhipin','indeed',],
-                        'title_red':['车','规划'],
+                        'title_red':['轨','车','规划'],
                         'title_green':['交通'],
                         'description_red':['轨','CAD','Auto'], 
                         'description_green':['应届','究生','硕士']},
