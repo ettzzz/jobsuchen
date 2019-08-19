@@ -29,43 +29,46 @@ from local_var import token, chat_id, browser_path
 
 job_cfgs = {
             'global':{
-#                    'crawls_per_day':6,
-                    'crawls_per_day':1,
-                    'crawl_size':25,
+                    'crawls_per_day':6,
+                    'crawl_size':100,
                     'db_name': 'jobs.db',
                     'ptable_name':'pool',
                     'ctable_name':'citysets',
                     'browser_path':browser_path,
                     },
             'filters':{
-#                'company_stops':['百度','aidu','腾讯','银行'],
-#                'position_stops':['实习','售','经理','高级','资深','总监','主管','专员','银行',],
-                'company_stops':[],
-                'position_stops':['总监','专员'],
+                'company_stops':['百度','aidu'],
+                'position_stops':['实习','售','经理','高级','资深','总监','主管','专员','银行',],
                 },
             'jobs':{
-#                'python': {
-#                        'cities':['shanghai', 'beijing'],
-#                        'webs':['lagou','bosszhipin','indeed','liepin'],
-#                        'title_red':['日语', 'php', 'ava', 'C', '自动','前端','课','讲'],
-#                        'title_green':['ython','工程'],
-#                        'description_red':['++','adoop','ocker','Vue','大专','专科'], 
-#                        'description_green':['应届','raduate']},
-#                '智能交通': {
-#                        'cities':['shanghai', 'shenzhen'],
-#                        'webs':['liepin','zhilian','bosszhipin','indeed',],
-#                        'title_red':['轨','车','规划'],
+                'python': {
+                        'cities':['shanghai', 'beijing'],
+                        'webs':['lagou','bosszhipin','indeed','liepin'],
+                        'title_red':['日语', 'php', 'ava', 'C', '自动','前端','课','讲'],
+                        'title_green':['ython','工程'],
+                        'description_red':['++','adoop','ocker','Vue','大专','专科'], 
+                        'description_green':['应届','raduate']},
+                '智能交通': {
+                        'cities':['shanghai'],
+                        'webs':['liepin','zhilian','bosszhipin','indeed',],
+                        'title_red':['轨','车','规划'],
+                        'title_green':['交通'],
+                        'description_red':['轨','CAD','Auto'], 
+                        'description_green':['应届','究生','硕士']},
+                '数据分析': {
+                        'cities':['shanghai'],
+                        'webs':['liepin','bosszhipin','lagou','linkedin'],
+                        'title_red':['产品'],
+                        'title_green':['数据'],
+                        'description_red':['精通'], 
+                        'description_green':['应届']},
+#                '产品经理': {
+#                        'cities':['shenzhen'],
+#                        'webs':['linkedin'],
+#                        'title_red':['总监', '专员'],
 #                        'title_green':['交通'],
-#                        'description_red':['轨','CAD','Auto'], 
-#                        'description_green':['应届','究生','硕士']},
-#                },
-                '产品经理': {
-                        'cities':['shenzhen'],
-                        'webs':['linkedin'],
-                        'title_red':['总监', '专员'],
-#                        'title_green':['交通'],
-                        'description_red':[], 
-                        'description_green':[]},
+#                        'description_red':[], 
+#                        'description_green':[]},
                 },
             'cities':{
                 'shanghai':{
