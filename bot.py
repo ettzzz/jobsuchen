@@ -38,7 +38,7 @@ class tellMyBot():
                         'disable_web_page_preview': 'True',
                         'parse_mode': 'HTML',
                         }
-                requests.get(self.api_base, headers=self.header, params=bot_params)
+                requests.get(self.api_base, headers=self.header, params=bot_params, timeout = 5)
                 time.sleep(0.2)
         else:
             bot_params = {

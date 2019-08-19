@@ -10,12 +10,20 @@ import time
 import random
 import requests
 import traceback
+import re
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import urlencode, quote, unquote, urlsplit, parse_qs
-from itertools import product
-#from local_var import lkn_username, lkn_password
-
+#from itertools import product
+from local_var import lkn_username, lkn_password, boss_token
+'''
+1. 尽量去除selenium
+#1.1 lagou怎么搞
+#1.2 智联的cookie
+#1.3 linkedin
+#2. boss直聘想个折中的方法
+3. 加上大街网/应届生
+'''
 
 class jobSpider():
     
@@ -30,7 +38,7 @@ class jobSpider():
                 'indeed':'#jobDescriptionText',
                 'zhilian':'div.describtion > div.describtion__detail-content',
                 'liepin':'div.content.content-word',
-                'lagou':'dl#job_detail.job_detail > dd.job_bt',
+                'lagou':'#job_detail > dd.job_bt > div',
                 'bosszhipin':'div.detail-content > div.job-sec > div.text',
                 }
         self.html_css = {
@@ -44,10 +52,10 @@ class jobSpider():
         
     
     def scheduler(self, pool):
-        self.browser_options = webdriver.firefox.options.Options()
-        self.browser_options.add_argument('--headless')
-        self.browser = webdriver.Firefox(executable_path = self.cfgs['global']['browser_path'], options = self.browser_options)
-        self.browser.set_page_load_timeout(60)
+#        self.browser_options = webdriver.firefox.options.Options()
+#        self.browser_options.add_argument('--headless')
+#        self.browser = webdriver.Firefox(executable_path = self.cfgs['global']['browser_path'], options = self.browser_options)
+#        self.browser.set_page_load_timeout(30)
         
         for job in list(self.cfgs['jobs'].keys()):
             for city in self.cfgs['jobs'][job]['cities']:
@@ -61,7 +69,7 @@ class jobSpider():
         print('scheduler: {} captured, {} after filtering.\n'.format(len(self.job_list), len(filtered_jobs)))
         censored_jobs = self.censoring(filtered_jobs)
         print('scheduler: {} after censoring.\n'.format(len(censored_jobs)))
-        self.browser.close()
+#        self.browser.close()
         return censored_jobs
 
     def filtering(self, pool):
@@ -75,8 +83,8 @@ class jobSpider():
                 continue
             elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['jobs'][each_job['Keyword']]['title_red']):
                 continue
-            elif any(each_green not in each_job['Position'] for each_green in self.cfgs['jobs'][each_job['Keyword']]['title_green']):
-                continue
+#            elif any(each_green not in each_job['Position'] for each_green in self.cfgs['jobs'][each_job['Keyword']]['title_green']):
+#                continue
             elif (each_job['UID'],) in pool:
                 continue
             else:
@@ -89,12 +97,18 @@ class jobSpider():
             self.randomwait()
             try:
                 if each_job['Source'] == 'lagou':
-                    self.browser.get(each_job['Comment']) #url4cookie
-                    self.browser.get(each_job['URL'])
-                    html = BeautifulSoup(self.browser.page_source, 'html.parser')
+                    v = requests.get('https://passport.lagou.com/login/login.html', headers = {'User-Agent':self.user_agent})
+                    token = re.findall('Anti_Forge_Token = \'(.*?)\';', v.text)[0]
+                    code = re.findall('Anti_Forge_Code = \'(\d*)\';', v.text)[0]
+                    s = requests.Session()
+                    s.get(each_job['Comment'], headers = {'User-Agent':self.user_agent})
+                    r = s.get(each_job['URL'], headers = {'User-Agent':self.user_agent, 'Referer':each_job['Comment'], 'X_Anti_Forge_Token':token, 'X_Anti_Forge_Code':code})
+                    html = BeautifulSoup(r.text, 'html.parser')
                 elif each_job['Source'] == 'zhilian':
-                    self.browser.get(each_job['URL'])
-                    html = BeautifulSoup(self.browser.page_source, 'html.parser')
+                    s = requests.Session()
+                    s.get(each_job['Comment']['Referer'], headers = {'User-Agent':self.user_agent})
+                    r = s.get(each_job['URL'], headers = each_job['Comment'])
+                    html = BeautifulSoup(r.text, 'html.parser')
                 else:
                     r = requests.get(each_job['URL'], headers = eval(each_job['Comment']), timeout = 10)
                     html = BeautifulSoup(r.text, 'html.parser')
@@ -103,6 +117,8 @@ class jobSpider():
                 
                 if any(each_sw in d for each_sw in self.cfgs['jobs'][each_job['Keyword']]['description_red']):
                     continue
+                else:
+                    censored_jobs.append(each_job)
                 if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['description_green']):
                     print('Nah, green channel', each_job['Position'], each_job['URL'])
                     censored_jobs.append(each_job)
@@ -135,9 +151,12 @@ class jobSpider():
                     }
                 url4jobs = 'https://www.linkedin.com/jobs/search?' + urlencode(params)
                 try:
-                    self.browser.get(url4jobs)
+                    s = requests.Session()
+                    r = s.get(url4jobs, headers = {'User-Agent':self.user_agent})
+#                    self.browser.get(url4jobs)
                     self.randomwait()
-                    html = BeautifulSoup(self.browser.page_source, 'html.parser')
+#                    html = BeautifulSoup(self.browser.page_source, 'html.parser')
+                    html = BeautifulSoup(r.text, 'html.parser')
                     jobs = html.select(self.html_css['linkedin'])
                     for each_job in jobs:
                         cache = {
@@ -305,7 +324,8 @@ class jobSpider():
                             'Payment': each_job['salary'],
                             'URL': each_job['positionURL'],
                             'Keyword': keyword,
-                            'Comment': str({'User-Agent':self.user_agent}),
+#                            'Comment': str({'User-Agent':self.user_agent}),
+                            'Comment':headers4jobs,
                             }
                     self.job_list.append(cache)
             except:
@@ -320,7 +340,10 @@ class jobSpider():
                 'px':'new', # 排序
                 'gx':'全职',
                 'isSchoolJob':'1',
-                'xl':'本科,硕士',
+                'gj':'3年及以下',
+                'jd':'B轮',
+#                'xl':'本科,硕士',
+                'xl':'本科',
                 'city':city,
                 'labelWords':'',
                 'fromSearch':'true',
@@ -348,8 +371,6 @@ class jobSpider():
                     s = requests.Session()
                     s.get(url4cookie, headers = headers4jobs, timeout = 5)
                     r = requests.post(url4jobs, data = data, headers=headers4jobs, cookies=s.cookies, timeout = 10)
-                    if '频繁' in r.text:
-                        print('lagou got caught')
                     jobs = r.json()['content']['positionResult']['result']
                     for each_job in jobs:
                         cache = {
@@ -375,35 +396,29 @@ class jobSpider():
     def bosszhipin(self, city, keyword):
         pages = self.crawl_size // 30
         release = '自动日期' + time.strftime('%m-%d',time.localtime(time.time()))
+        token = boss_token
+        cookies = '__zp_stoken__={}'.format(token)
+        headers4jobs = {
+                'User-Agent':self.user_agent,
+                'Host':'www.zhipin.com',
+                'Cookie':cookies
+                }
         for each_page in range(pages):
             params4jobs = {
             'query': keyword,
             'city': city,
-            'page': str(each_page),
+            'page': str(each_page + 1),
             'degree':'203', # 204 master degree
             'experience':'104', # working experience
             }
             url4jobs = 'https://www.zhipin.com/job_detail?' + urlencode(params4jobs)
             
             try:
-                url4cookie = 'https://www.zhipin.com/c{}-p{}/'.format(params4jobs['city'], 230204 + random.randint(-2, 6))
-                self.browser.get(url4cookie)
-                self.randomwait()
-                cookies = self.browser.get_cookies()
-                s = requests.Session()
-                for cookie in cookies:
-                    s.cookies.set(cookie['name'], cookie['value'])
-                    
-                headers4jobs = {
-                    'User-Agent':self.user_agent,
-                    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Host':'www.zhipin.com',
-                    'X-Requested-With':'XMLHttpRequest',
-                    'TE':'Trailers',}
-            
-                r = requests.get(url4jobs, headers = headers4jobs, cookies = s.cookies, timeout = 10)
+                r = requests.get(url4jobs, headers = headers4jobs, timeout = 10)
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs  = html.select(self.html_css['bosszhipin'])
+                if len(jobs) == 0:
+                    print('Got caught by bosszhipin')
                 for each_job in jobs:
                     cache = {
                             'UID': each_job.select('h3.name > a')[0]['data-jid'],
@@ -424,6 +439,12 @@ class jobSpider():
                 else:
                     print('bosszhipin bug: {}\n'.format(traceback.format_exc()))
 
+
+    def dajie(self, city, keyword):
+        pass
+    
+    def yingjiesheng(self, city, keyword):
+        pass
     
     def randomwait(self):
         sec = round(random.randint(1, 2) + random.uniform(0.5, 0.7), 2)
@@ -473,12 +494,80 @@ if __name__ == "__main__":
     test = jobSpider(job_cfgs)
     alles = test.scheduler(db.poolShow())
     print(len(alles),len(test.job_list))
-    
+    alles2 = []
+    for i in alles:
+        alles2.append(list(i.values()))
 
 #    from local_var import token, chat_id
 #    from bot import tellMyBot
-#    alles2 = []
-#    for i in alles:
-#        alles2.append(list(i.values()))
 #    bot = tellMyBot(token, chat_id)
 #    bot.send2me(alles2)
+
+
+#
+#seed = '43+JBYh+TbFTkcYqCrB4IjS9pHAjLkQX8ppMNSqLUmw='
+#name = '7c0225ec'
+#ts = int(time.time() * 1000)
+#callbackUrl = '/job_detail?query=%E4%BC%9A%E8%AE%A1&city=101280600&page=0&degree=203&experience=104'
+#security_params = {
+#        'seed':seed,
+#        'name':name,
+#        'ts':ts,
+#        'callbackUrl':callbackUrl,
+#        }
+#
+#security_url = 'https://www.zhipin.com/web/common/security-check.html?'.replace('/','%2F') + urlencode(security_params)
+#
+#'''
+#somehow we generate the token
+#'''
+#ts_gif = int(time.time())
+##token = 'a2eab6N75PVmsgw7IweU9mvJ%2F2a4ueuZDb5viNCO7F%2FGieIZS3bPDSJllvQhjKc%2FUlt%2FokT3aLkX6uXw1p%2BtUd8XbQ%3D%3D'
+#token = 'a2eab6N75PVmsgw7IweU9mvJ%2FzZoQEm%2BE2GM71YmtTFsKMxhPoqqcc5vuvIGfVukx0RN%2BkFWp8srOlLDnwkQCY8Aug%3D%3D'
+#gif1 = 'https://t.bosszhipin.com/_.gif?__a=35512125.{}..{}.1.1.1.1\
+#&__l=l%3D%252Fwww.zhipin.com%252Fweb%252Fcommon%252Fsecurity-check.html%253Fseed%253D43%25252BJBYh%25252BTbFTkcYqCrB4IjS9pHAjLkQX8ppMNSqLUmw%25253D%2526name%253D7c0225ec%2526ts%253D1565581952709%2526callbackUrl%253D%25252Fjob_detail%25253Fquery%25253D%252525E4%252525BC%2525259A%252525E8%252525AE%252525A1%252526city%25253D101280600%252526page%25253D0%252526degree%25253D203%252526experience%25253D104%26r%3D\
+#&__g=-&e=161&r=&_={}&pk=security_bridge'.format(ts_gif, ts_gif, ts_gif + 54)
+#gif2 = gif1 + '&ca=security_bridge_' + token
+#gif_headers = {'Referer': security_url,
+#               'Sec-Fetch-Mode': 'no-cors',
+#               'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36'}
+#
+#s = requests.Session()
+#r0 = s.get(security_url, headers = {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36'})
+#r1 = s.get(gif1, headers = gif_headers)
+#r2 = s.get(gif2, headers = gif_headers)
+#
+#
+#hds = {	
+#'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+#'Accept-Encoding':	'gzip, deflate, br',
+#'Accept-Language':	'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
+#'Cache-Control':'no-cache',
+##'Cookie':'__zp_stoken__={}'.format(token),
+#'Host':	'www.zhipin.com',
+#'TE':'Trailers',
+#'Upgrade-Insecure-Requests':'1',
+#'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0) Gecko/20100101 Firefox/68.0',
+#}
+#
+#s = requests.Session()
+#r = s.get(url4jobs, headers = hds)
+#r = requests.get(url4jobs, headers = hds)
+#
+#job_list = []
+##for each_page in range(18):
+#each_page = 0
+#params4jobs = {
+#            'query': '会计',
+#            'city': '101280600',
+#            'page': str(each_page),
+#            'degree':'203', # 204 master degree
+#            'experience':'104', # working experience
+#            }
+#url4jobs = 'https://www.zhipin.com/job_detail?' + urlencode(params4jobs)
+#r = requests.get(url4jobs, headers = hds)
+#html = BeautifulSoup(r.text, 'html.parser')
+#jobs = html.select('#main > div > div.job-list > ul > li')
+#             
+#
+#print(len(jobs))
