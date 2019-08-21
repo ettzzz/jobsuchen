@@ -9,12 +9,12 @@ Created on Mon May  6 10:22:33 2019
 
 import requests
 import time
-from local_var import token, chat_id
+from local_var import chat_token, chat_id
 
 class tellMyBot():
 
     def __init__(self, token, chat_id):
-        self.token = token
+        self.token = chat_token
         self.chat_id = chat_id
         self.api_base = 'https://api.telegram.org/bot{}/sendMessage'.format(self.token)
         self.header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) \
@@ -55,5 +55,5 @@ class tellMyBot():
         requests.get(self.api_base, headers=self.header, params=bot_params)
         
 if __name__ == '__main__':
-    test_bot = tellMyBot(token, chat_id)
+    test_bot = tellMyBot(chat_token, chat_id)
             

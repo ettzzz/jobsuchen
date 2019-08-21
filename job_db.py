@@ -13,11 +13,11 @@ import time
 
 class jobDataBase():
     
-    def __init__(self):
+    def __init__(self, user_id = '000'):
         self.database = 'jobs.db'
-        self.pool_table = 'pool'
+        self.pool_table = 'pool' + user_id
         self.city_table = 'cityset'
-        self.job_table = 'jobs'
+        self.job_table = 'jobs' + user_id
         self.buildPool()
         self.buildCityset()
         self.buildJobtable()
@@ -28,20 +28,23 @@ class jobDataBase():
         c = conn.cursor()
         return conn, c
     
+    def db_switch_off(self, conn, c):
+        c.close()
+        conn.close()
+    
     def buildPool(self):
         tables = self.allTables()
         conn, c = self.db_switch_on()
         if (self.pool_table,) not in tables:
-            c.execute('CREATE TABLE {}(UID TEXT PRIMARY KEY NOT NULL);'.format(self.pool_table))
+            c.execute("CREATE TABLE {}(UID TEXT PRIMARY KEY NOT NULL);".format(self.pool_table))
             conn.commit()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         
     def buildCityset(self):
         tables = self.allTables()
         conn, c = self.db_switch_on()
         if (self.city_table,) not in tables:
-            c.execute('CREATE TABLE {}(\
+            c.execute("CREATE TABLE {}(\
                       UID INTEGER PRIMARY KEY AUTOINCREMENT,\
                       pinyin TEXT NOT NULL,\
                       linkedin TEXT,\
@@ -49,17 +52,36 @@ class jobDataBase():
                       zhilian TEXT,\
                       liepin TEXT,\
                       lagou TEXT,\
-                      bosszhipin TEXT);'.format(self.city_table))
+                      bosszhipin TEXT,\
+                      yingjiesheng TEXT,\
+                      dajie TEXT);".format(self.city_table))
             conn.commit()
-        c.close()
-        conn.close()
-
+        self.db_switch_off(conn, c)
+        
+    def insertCityset(self, city_pinyin, web, city_code):
+        conn, c = self.db_switch_on()
+        c.execute("SELECT pinyin FROM {};".format(self.city_table))
+        cities = c.fetchall()
+        if (city_pinyin,) not in cities:
+            value = "('{}', '{}')".format(city_pinyin, city_code)
+            c.execute("INSERT INTO {} (pinyin, {}) VALUES {};".format(self.city_table, web, value))
+        else:
+            c.execute("UPDATE {} SET {} = '{}' WHERE pinyin = '{}';".format(self.city_table, web, city_code, city_pinyin))
+        conn.commit()
+        self.db_switch_off(conn, c)
+        
+    def getCityCode(self, city_pinyin, web):
+        conn, c = self.db_switch_on()
+        c.execute("SELECT {} FROM {} WHERE pinyin = \'{}\';".format(web, self.city_table, city_pinyin))
+        x = c.fetchall()
+        self.db_switch_off(conn, c)
+        return x[0][0]
         
     def buildJobtable(self):
         tables = self.allTables()
         conn, c = self.db_switch_on()
         if (self.job_table,) not in tables:
-            c.execute('CREATE TABLE {}(\
+            c.execute("CREATE TABLE {}(\
                             UID TEXT PRIMARY KEY NOT NULL,\
                             Source CHAR(20) NOT NULL,\
                             Position TEXT NOT NULL,\
@@ -70,44 +92,39 @@ class jobDataBase():
                             URL TEXT NOT NULL,\
                             Keyword TEXT NOT NULL,\
                             Timestamp INTEGER NOT NULL\
-                            );'.format(self.job_table))
+                            );".format(self.job_table))
         conn.commit()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
     
     def buildStampdrawer(self):
         tables = self.allTables()
         if ('timestamp',) not in tables:
             conn, c = self.db_switch_on()
-            c.execute('CREATE TABLE timestamp(\
+            c.execute("CREATE TABLE timestamp(\
                       UID INTEGER PRIMARY KEY AUTOINCREMENT,\
-                      laststamp INTEGER NOT NULL);')
+                      laststamp INTEGER NOT NULL);")
             conn.commit()
-            c.close()
-            conn.close()
+            self.db_switch_off(conn, c)
             self.addTimestamp(1900000000)
         
     def readTimestamp(self):
         conn, c = self.db_switch_on()
-        c.execute('SELECT laststamp FROM timestamp;')
+        c.execute("SELECT laststamp FROM timestamp;")
         x = c.fetchall()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         return x[-1][0]
     
     def addTimestamp(self, ts):
         conn, c = self.db_switch_on()
-        c.execute('INSERT INTO timestamp (laststamp) VALUES ({});'.format(ts))
+        c.execute("INSERT INTO timestamp (laststamp) VALUES ({});".format(ts))
         conn.commit()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         
     def allTables(self):
         conn, c = self.db_switch_on()
         c.execute("SELECT name FROM sqlite_master WHERE TYPE='table' ORDER BY name")
         x = c.fetchall()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         return x
     
     def insert(self, captured_jobs):
@@ -123,32 +140,28 @@ class jobDataBase():
             except:
                 traceback.print_exc()
             conn.commit()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
     
     def fetch(self):
         conn, c = self.db_switch_on()
-        c.execute('SELECT * FROM {};'.format(self.job_table))
+        c.execute("SELECT * FROM {};".format(self.job_table))
         x = c.fetchall()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         return x
 
     def fetchnew(self):
         ts = self.readTimestamp()
         conn, c = self.db_switch_on()
-        c.execute('SELECT * FROM {} WHERE Timestamp > {};'.format(self.job_table, ts))
+        c.execute("SELECT * FROM {} WHERE Timestamp > {};".format(self.job_table, ts))
         x = c.fetchall()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         return x
     
     def clean(self):
         conn, c = self.db_switch_on()
         c.execute("DELETE FROM {};".format(self.job_table))
         conn.commit()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         
     def reset(self): # Use with cautions
         conn, c = self.db_switch_on()
@@ -159,25 +172,25 @@ class jobDataBase():
                     conn.commit()
             except:
                 continue
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         
     def poolCheck(self):
         conn, c = self.db_switch_on()
         c.execute("SELECT count(*) FROM {};".format(self.pool_table))
         x = c.fetchall()[0][0]
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         return x
     
     def poolShow(self):
         conn, c = self.db_switch_on()
         c.execute("SELECT * FROM {};".format(self.pool_table))
         x = c.fetchall()
-        c.close()
-        conn.close()
+        self.db_switch_off(conn, c)
         return x
     
                                 
 if __name__ == '__main__':
     test_db = jobDataBase()
+
+                
+        
