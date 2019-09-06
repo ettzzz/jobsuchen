@@ -14,6 +14,7 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlencode, quote, unquote
 from local_var import boss_token
+from job_lib import zhilian_cookie_factory
 '''
 #1.3 linkedin
 '''
@@ -96,8 +97,13 @@ class jobSpider():
                     r = s.get(each_job['URL'], headers = {'User-Agent':self.user_agent, 'Referer':each_job['Comment'], 'X_Anti_Forge_Token':token, 'X_Anti_Forge_Code':code})
                 elif each_job['Source'] == 'zhilian':
                     s = requests.Session()
-                    s.get(each_job['Comment']['Referer'], headers = {'User-Agent':self.user_agent})
-                    r = s.get(each_job['URL'], headers = each_job['Comment'])
+                    r_temp = s.get(each_job['URL'], headers = eval(each_job['Comment']))
+                    if re.findall('arg1=\'(.*?)\';', r_temp.text):
+                        key = re.findall('arg1=\'(.*?)\';', r_temp.text)[0]
+                        s.cookies['acw_sc__v2'] = zhilian_cookie_factory(key)
+                    else:
+                        pass    
+                    r = s.get(each_job['URL'], headers = eval(each_job['Comment']))
                 elif each_job['Source'] == 'yingjiesheng':
                     r = requests.get(each_job['URL'], headers = eval(each_job['Comment']), timeout = 10)
                     r.encoding = 'gbk'
@@ -300,7 +306,6 @@ class jobSpider():
             url4jobs = 'https://fe-api.zhaopin.com/c/i/sou?' + urlencode(params4jobs)
             headers4jobs = {
                 'Accept': 'application/json, text/plain, */*',
-                'Origin': 'https://sou.zhaopin.com',
                 'Referer': url4cookie,
                 'User-Agent': self.user_agent,
                 }
@@ -320,8 +325,7 @@ class jobSpider():
                             'Payment': each_job['salary'],
                             'URL': each_job['positionURL'],
                             'Keyword': keyword,
-#                            'Comment': str({'User-Agent':self.user_agent}),
-                            'Comment':headers4jobs,
+                            'Comment': str({'User-Agent':self.user_agent}),
                             }
                     self.job_list.append(cache)
             except:
@@ -520,7 +524,7 @@ class jobSpider():
     
             
 if __name__ == "__main__":
-    from run_job import job_cfgs as cfgs 
+    from job_lib import job_cfgs as cfgs 
     from job_db import jobDataBase
     from itertools import product
     db = jobDataBase()
@@ -539,5 +543,4 @@ if __name__ == "__main__":
 #    for i in alles:
 #        alles2.append(list(i.values()))
 #    bot.send2me(alles2)
-
 
