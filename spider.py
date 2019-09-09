@@ -69,13 +69,13 @@ class jobSpider():
         for i, each_job in enumerate(self.job_list):
             if each_job['URL'][:4] != 'http':
                 continue
-            elif any(each_verbot in each_job['Company'] for each_verbot in self.cfgs['filters']['company_stops']):
+            elif any(re.search(self.unicodify(each_verbot), each_job['Company'], re.I) for each_verbot in self.cfgs['filters']['company_stops']):
                 continue
-            elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['filters']['position_stops']):
+            elif any(re.search(self.unicodify(each_verbot), each_job['Position'], re.I) for each_verbot in self.cfgs['filters']['position_stops']):
                 continue
-            elif any(each_verbot in each_job['Position'] for each_verbot in self.cfgs['jobs'][each_job['Keyword']]['title_red']):
+            elif any(re.search(self.unicodify(each_verbot), each_job['Position'], re.I) for each_verbot in self.cfgs['jobs'][each_job['Keyword']]['title_red']):
                 continue
-            elif any(each_green not in each_job['Position'] for each_green in self.cfgs['jobs'][each_job['Keyword']]['title_green']):
+            elif not any(re.search(self.unicodify(each_green), each_job['Position'], re.I) for each_green in self.cfgs['jobs'][each_job['Keyword']]['title_green']):
                 continue
             elif (each_job['UID'],) in pool:
                 continue
@@ -117,12 +117,12 @@ class jobSpider():
                 else:
                     d = html.select(self.description_css[each_job['Source']])[0].get_text().strip()
                 
-                if any(each_gw in d for each_gw in self.cfgs['jobs'][each_job['Keyword']]['description_green']):
+                if any(re.search(self.unicodify(each_gw), d, re.I) for each_gw in self.cfgs['jobs'][each_job['Keyword']]['description_green']):
                     print('Nah, green channel', each_job['Position'], each_job['URL'])
                     censored_jobs.append(each_job)
                     continue
                 
-                if any(each_sw in d for each_sw in self.cfgs['jobs'][each_job['Keyword']]['description_red']):
+                if any(re.search(self.unicodify(each_sw), d, re.I) for each_sw in self.cfgs['jobs'][each_job['Keyword']]['description_red']):
                     continue
                 else:
                     censored_jobs.append(each_job)
@@ -146,10 +146,10 @@ class jobSpider():
                 params = {
                     'f_JT': 'F', # full time job
                     'f_TP': 1,
-#                    'f_TPR': 'r86400', # last 24 hr
+                    'f_TPR': 'r86400', # last 24 hr
 #                    'f_LF': 'f_EA', # less than 10 candidates
                     'keywords': keyword,
-#                    'location': city['location'],
+#                    'location': city['location'], # will be deprecated in the future
                     'locationId':city,
                     'start': each_page * 25, 
                     'sortBy': 'DD',
@@ -399,7 +399,7 @@ class jobSpider():
         cookies = '__zp_stoken__={}'.format(token)
         headers4jobs = {
                 'User-Agent':self.user_agent,
-                'Host':'www.zhipin.com',
+#                'Host':'www.zhipin.com',
                 'Cookie':cookies
                 }
         for each_page in range(pages):
@@ -414,7 +414,8 @@ class jobSpider():
             
             try:
                 r = requests.get(url4jobs, headers = headers4jobs, timeout = 10)
-                self.randomwait()
+#                self.randomwait()
+                time.sleep(5)
                 html = BeautifulSoup(r.text, 'html.parser')
                 jobs  = html.select(self.html_css['bosszhipin'])
                 if len(jobs) == 0:
@@ -521,6 +522,14 @@ class jobSpider():
                     continue
             counter += 1
         return proxies
+    
+    def unicodify(self, string):
+        cache = string
+        specials = ['+', '.', '*', '[',']', '{', '}', '(', ')', '?', '|', '^', '$']
+        for each in specials:
+            if each in cache:
+                cache = cache.replace(each, '[{}]'.format(each))
+        return cache.encode('unicode_escape').decode('utf-8')
     
             
 if __name__ == "__main__":

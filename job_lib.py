@@ -44,34 +44,55 @@ job_cfgs = {
                     'db_name': 'jobs.db',
                     },
             'filters':{
-                'company_stops':['百度','aidu'],
-                'position_stops':['实习','售','经理','高级','资深','总监','主管','专员','银行',],
+                'company_stops':['百度','baidu'],
+                'position_stops':['实习','售','经理','高级','资深','总监','主管','专员','大数据'],
                 },
             'jobs':{
-                'python数据': {
+                'python':{ # test
                         'cities':['shanghai'],
-#                        'webs':['lagou','indeed','yingjiesheng','liepin','zhilian','bosszhipin',],
-                        'webs':['zhilian'],
-                        'title_red':['后端','ava','++'],
-                        'title_green':['ython','数据'],
-                        'description_red':['++','adoop','ocker','Vue','大专','专科'], 
-                        'description_green':['应届','raduate',]},
-#                '智能交通': {
+                        'webs':['lagou'],
+                        'title_red':['后端','java'],
+                        'title_green':['python'],
+                        'description_red':['c++','hadoop','大专','专科'], 
+                        'description_green':['应届','graduate',]
+                        },
+#                'python数据分析': {
 #                        'cities':['shanghai'],
-#                        'webs':['liepin','zhilian','indeed','yingjiesheng'],
-#                        'title_red':['轨','车','规划'],
-#                        'title_green':['交通'],
-#                        'description_red':['轨','CAD','Auto'], 
-#                        'description_green':['应届','究生','硕士']},
+#                        'webs':['lagou', 'yingjiesheng','liepin','zhilian','bosszhipin',],
+#                        'title_red':['后端','java','c++'],
+#                        'title_green':['python','数据'],
+#                        'description_red':['hadoop','docker','vue','大专','专科'], 
+#                        'description_green':['应届','graduate',]
+#                        },
 #                '交通数据':{
 #                        'cities':['shanghai'],
-#                        'webs':['yingjiesheng','lagou','indeed'],
-#                        'title_red':['轨','规划'],
+#                        'webs':['yingjiesheng','lagou','liepin','zhilian'],
+#                        'title_red':['轨','规划','大'],
 #                        'title_green':['交通'],
-#                        'description_red':['轨','CAD','Auto'], 
-#                        'description_green':['应届','究生','硕士']},
+#                        'description_red':['轨','cad','auto'], 
+#                        'description_green':['应届','硕士']
+#                        },
+#                '游戏数据':{
+#                        'cities':['shanghai'],
+#                        'webs':['yingjiesheng','lagou','zhilian','liepin'],
+#                        'title_red':[],
+#                        'title_green':['数据'],
+#                        'description_red':[], 
+#                        'description_green':['应届','python']
+#                        },
+#                'GIS':{
+#                        'cities':['shanghai'],
+#                        'webs':['yingjiesheng','lagou','indeed','zhilian','liepin','linkedin'],
+#                        'title_red':['销售'],
+#                        'title_green':['gis','数据','开发'],
+#                        'description_red':['cad','auto'], 
+#                        'description_green':['应届','硕士']
+#                        },
+#                
                 },
-            }
+
+        }
+            
 
 
 
