@@ -5,14 +5,14 @@ Created on Thu Jul 25 09:35:47 2019
 @author: ert
 """
 
-from local_var import token, chat_id
+from local_var import chat_token, chat_id
 from bot import tellMyBot
 from job_db import jobDataBase
 import time
 
 def main():
     db = jobDataBase()
-    messager = tellMyBot(token, chat_id)
+    messager = tellMyBot(chat_token, chat_id)
     new_jobs = db.fetchnew()
     print('call: Sending messages to bot...\n')
     messager.send2me(new_jobs)
